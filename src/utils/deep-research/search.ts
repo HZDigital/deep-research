@@ -150,8 +150,8 @@ export async function createSearchProvider({
           search_depth: "advanced",
           topic: scope || "general",
           max_results: Number(maxResult),
-          include_images: true,
-          include_image_descriptions: true,
+          include_images: false, //true NUNO,
+          include_image_descriptions: false, //true NUNO,
           include_answer: false,
           include_raw_content: "markdown",
         }),
@@ -294,7 +294,7 @@ export async function createSearchProvider({
               "google scholar",
               "pubmed",
               "wikispecies",
-              "google_images",
+              //"google_images", //NUNO
             ]
           : [
               "google",
@@ -302,8 +302,8 @@ export async function createSearchProvider({
               "duckduckgo",
               "brave",
               "wikipedia",
-              "bing_images",
-              "google_images",
+              //"bing_images", //NUNO
+              //"google_images",//NUNO
             ],
       lang: "auto",
       format: "json",

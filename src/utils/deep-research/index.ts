@@ -4,6 +4,7 @@ import { createAIProvider } from "./provider";
 import { createSearchProvider } from "./search";
 import {
   getSystemPrompt,
+  generateQuestionsPrompt,
   writeReportPlanPrompt,
   generateSerpQueriesPrompt,
   processResultPrompt,
@@ -107,6 +108,44 @@ class DeepResearch {
     return this.options.language
       ? `**Respond in ${this.options.language}**`
       : `**Respond in the same language as the user's language**`;
+  }
+
+  async askQuestions(query: string): Promise<string> {
+    this.onMessage("progress", { step: "ask-questions", status: "start" });
+    const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const result = streamText({
+      model: await this.getThinkingModel(),
+      system: getSystemPrompt(),
+      prompt: [
+        generateQuestionsPrompt(query),
+        this.getResponseLanguagePrompt(),
+      ].join("\n\n"),
+    });
+    let content = "";
+    this.onMessage("message", { type: "text", text: "<questions>\n" });
+    for await (const part of result.fullStream) {
+      if (part.type === "text-delta") {
+        thinkTagStreamProcessor.processChunk(
+          part.textDelta,
+          (data) => {
+            content += data;
+            this.onMessage("message", { type: "text", text: data });
+          },
+          (data) => {
+            this.onMessage("reasoning", { type: "text", text: data });
+          }
+        );
+      } else if (part.type === "reasoning") {
+        this.onMessage("reasoning", { type: "text", text: part.textDelta });
+      }
+    }
+    this.onMessage("message", { type: "text", text: "\n</questions>\n\n" });
+    this.onMessage("progress", {
+      step: "ask-questions",
+      status: "end",
+      data: content,
+    });
+    return content;
   }
 
   async writeReportPlan(query: string): Promise<string> {

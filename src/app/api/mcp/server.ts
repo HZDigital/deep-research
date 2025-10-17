@@ -57,6 +57,8 @@ function initDeepResearchServer({
 export function initMcpServer() {
   const deepResearchToolDescription =
     "Start deep research on any question, obtain and organize information through search engines, and generate research report.";
+  const askQuestionDescription =
+    "Generate follow-up questions to clarify the research direction based on user query.";
   const writeResearchPlanDescription =
     "Generate research plan based on user query.";
   const generateSERPQueryDescription =
@@ -76,6 +78,9 @@ export function initMcpServer() {
         tools: {
           "deep-research": {
             description: deepResearchToolDescription,
+          },
+          "ask-question": {
+            description: askQuestionDescription,
           },
           "write-research-plan": {
             description: writeResearchPlanDescription,
@@ -161,6 +166,42 @@ export function initMcpServer() {
   );
 
   server.tool(
+    "ask-question",
+    askQuestionDescription,
+    {
+      query: z.string().describe("The topic to generate questions for."),
+      language: z.string().optional().describe("The response Language."),
+    },
+    async ({ query, language }, { signal }) => {
+      signal.addEventListener("abort", () => {
+        throw new Error("The client closed unexpectedly!");
+      });
+
+      try {
+        const deepResearch = initDeepResearchServer({ language });
+        const result = await deepResearch.askQuestions(query);
+        return {
+          content: [
+            { type: "text", text: result },
+          ],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Error: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  server.tool(
     "write-research-plan",
     writeResearchPlanDescription,
     {
@@ -177,7 +218,7 @@ export function initMcpServer() {
         const result = await deepResearch.writeReportPlan(query);
         return {
           content: [
-            { type: "text", text: JSON.stringify({ reportPlan: result }) },
+            { type: "text", text:  result },
           ],
         };
       } catch (error) {
