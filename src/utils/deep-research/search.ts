@@ -181,6 +181,7 @@ export async function createSearchProvider({
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
   if (provider === "tavily") {
+    try {
     const response = await fetch(
       `${completePath(baseURL || TAVILY_BASE_URL)}/search`,
       {
@@ -212,6 +213,13 @@ export async function createSearchProvider({
         }) as Source[],
       images: images as ImageSource[],
     };
+  }   catch (error) {
+      console.error('Error fetching or parsing Tavily response:', error);
+      return {
+        sources: [],
+        images: [],
+      };
+    }
   } else if (provider === "firecrawl") {
     const response = await fetch(
       `${completePath(baseURL || FIRECRAWL_BASE_URL, "/v1")}/search`,
