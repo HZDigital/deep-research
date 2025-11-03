@@ -132,10 +132,14 @@ async function fetchWithRetry(
   maxRetries: number = 3,
   timeout: number = 50000
 ): Promise<Response> {
+  let lastError: Error | null = null;
+  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      timeoutId = setTimeout(() => controller.abort(), timeout);
       
       const response = await fetch(url, {
         ...options,
@@ -151,11 +155,26 @@ async function fetchWithRetry(
       
       return response;
     } catch (error) {
-      console.warn(`Attempt ${attempt}/${maxRetries} failed:`, error instanceof Error ? error.message : 'Unknown error');
+      // Clear timeout on error
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorName = error instanceof Error ? error.name : '';
+      
+      // Handle abort/timeout errors specifically
+      if (errorName === 'AbortError' || errorMessage.includes('aborted')) {
+        console.warn(`Attempt ${attempt}/${maxRetries} timed out after ${timeout}ms`);
+        lastError = new Error(`Request timed out after ${timeout}ms`);
+      } else {
+        console.warn(`Attempt ${attempt}/${maxRetries} failed:`, errorMessage);
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
       
       // If this is the last attempt, throw the error
       if (attempt === maxRetries) {
-        throw error;
+        throw lastError;
       }
       
       // Wait before retrying (exponential backoff)
@@ -164,7 +183,7 @@ async function fetchWithRetry(
     }
   }
   
-  throw new Error('Maximum retry attempts exceeded');
+  throw lastError || new Error('Maximum retry attempts exceeded');
 }
 
 export async function createSearchProvider({
@@ -182,7 +201,7 @@ export async function createSearchProvider({
 
   if (provider === "tavily") {
     try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${completePath(baseURL || TAVILY_BASE_URL)}/search`,
       {
         method: "POST",
