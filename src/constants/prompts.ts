@@ -48,7 +48,7 @@ Follow these rules to organize your output:
 7. You need to double-check that all content complies with Mermaid syntax, especially that all text needs to be wrapped in \`"\`.
 </OutputGuidelines>`;
 
-export const systemQuestionPrompt = `Given the following query from the user, ask at least 5 follow-up questions to clarify the research direction:
+export const systemQuestionPrompt = `Given the following query from the user, ask 3-5 to the point follow-up questions to clarify ambiguity and specify the research direction:
 
 <QUERY>
 {query}
@@ -69,7 +69,7 @@ export const reportPlanPrompt = `Given the following query from the user:
 {query}
 </QUERY>
 
-Generate a list of sections for the report based on the topic and feedback.
+Generate a list of sections for the report based on the topic and feedback. When asked to search many entities like suppliers or people, consider clustering categories or search approaches.
 Your plan should be tight and focused with NO overlapping sections or unnecessary filler. Each section needs a sentence summarizing its content.
 
 ${guidelinesPrompt}
@@ -189,13 +189,11 @@ If you believe no further research is needed, you can output an empty queries.
 ${serpQuerySchemaPrompt}`;
 
 export const finalReportCitationImagePrompt = `Image Rules:
-
 - Images related to the paragraph content at the appropriate location in the article according to the image description.
 - Include images using \`![Image Description](image_url)\` in a separate section.
 - **Do not add any images at the end of the article.**`;
 
 export const finalReportReferencesPrompt = `Citation Rules:
-
 - Please cite research references at the end of your paragraphs when appropriate.
 - If the citation is from the reference, please **ignore**. Include only references from sources.
 - Please use the reference format [number], to reference the learnings link in corresponding parts of your answer.
@@ -228,8 +226,8 @@ Please write according to the user's writing requirements, if any:
 {requirement}
 </REQUIREMENT>
 
-Write a final report based on the report plan using the learnings from research.
-Make it as detailed as possible, aim for 5 pages or more, the more the better, include ALL the learnings from research.
+To answer the user request below, please wirt out a thorough strucutred final report based on the report plan using the learnings from research including sources, data figures, quotes. 
+Length, style and complexity should fit the user requestion (below). User headers to structure the report, build tables if fitting to the retrieved information, build bullet point lists if fitting to list like content. write out argumentation lines - make sure to explain findings and reason the explain it! There is value in the citations, please use them to proove arguemnts and findings! The report should be fit so a consulting partner will approve this to be sent to a client without further refinement.
 **Respond only the final report content, and no additional text before or after.**`;
 
 export const rewritingPrompt = `You are tasked with re-writing the following text to markdown. Ensure you do not change the meaning or story behind the text. 
