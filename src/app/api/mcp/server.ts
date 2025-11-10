@@ -171,19 +171,20 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic to generate questions for."),
       language: z.string().optional().describe("The response Language."),
+      prompt: z
+        .string()
+        .describe("Custom Prompt with instructions and information."),
     },
-    async ({ query, language }, { signal }) => {
+    async ({ query, language, prompt }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
 
       try {
         const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.askQuestions(query);
+        const result = await deepResearch.askQuestions(query, prompt);
         return {
-          content: [
-            { type: "text", text: result },
-          ],
+          content: [{ type: "text", text: result }],
         };
       } catch (error) {
         return {
@@ -217,9 +218,7 @@ export function initMcpServer() {
         const deepResearch = initDeepResearchServer({ language });
         const result = await deepResearch.writeReportPlan(query);
         return {
-          content: [
-            { type: "text", text:  result },
-          ],
+          content: [{ type: "text", text: result }],
         };
       } catch (error) {
         return {

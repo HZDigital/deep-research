@@ -110,14 +110,14 @@ class DeepResearch {
       : `**Respond in the same language as the user's language**`;
   }
 
-  async askQuestions(query: string): Promise<string> {
+  async askQuestions(query: string, prompt: string = ""): Promise<string> {
     this.onMessage("progress", { step: "ask-questions", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const result = streamText({
       model: await this.getThinkingModel(),
       system: getSystemPrompt(),
       prompt: [
-        generateQuestionsPrompt(query),
+        generateQuestionsPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
     });

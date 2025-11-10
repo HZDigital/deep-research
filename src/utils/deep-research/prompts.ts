@@ -41,8 +41,8 @@ export function getSystemPrompt() {
   return systemInstruction.replace("{now}", new Date().toISOString());
 }
 
-export function generateQuestionsPrompt(query: string) {
-  return systemQuestionPrompt.replace("{query}", query);
+export function generateQuestionsPrompt(query: string, prompt: string) {
+  return systemQuestionPrompt.replace("{query}", query).replace("{prompt}", prompt);
 }
 
 export function writeReportPlanPrompt(query: string) {
