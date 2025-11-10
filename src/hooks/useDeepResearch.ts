@@ -145,7 +145,7 @@ function useDeepResearch() {
       ...searchSettings,
       system: getSystemPrompt(),
       prompt: [
-        generateQuestionsPrompt(question),
+        generateQuestionsPrompt(question, ""),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
       experimental_transform: smoothTextStream(smoothTextStreamType),
