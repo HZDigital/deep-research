@@ -120,6 +120,7 @@ class DeepResearch {
         generateQuestionsPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
+      temperature: 1,
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<questions>\n" });
@@ -158,6 +159,7 @@ class DeepResearch {
         writeReportPlanPrompt(query),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
+      temperature: 1,
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<report-plan>\n" });
@@ -198,6 +200,7 @@ class DeepResearch {
         generateSerpQueriesPrompt(reportPlan),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
+      temperature: 1,
     });
     const querySchema = getSERPQuerySchema();
     let content = "";
@@ -506,7 +509,7 @@ class DeepResearch {
           content: messageContent,
         },
       ],
-      temperature: 0.5,
+      temperature: 1,
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<final-report>\n" });
