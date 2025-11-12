@@ -291,6 +291,7 @@ class DeepResearch {
             processResultPrompt(item.query, item.researchGoal),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
+           topP: 0.9,
           tools: await getTools(),
           providerOptions: getProviderOptions(),
         });
@@ -321,6 +322,7 @@ class DeepResearch {
             ),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
+           topP: 0.85,
         });
       }
 
@@ -510,6 +512,7 @@ class DeepResearch {
         },
       ],
       temperature: 1,
+      topP: 0.85,
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<final-report>\n" });
