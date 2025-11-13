@@ -102,7 +102,7 @@ ${guidelinesPrompt}
 
 Before submitting, review your structure to ensure it has no redundant sections and follows a logical flow.
 
-Also take into account the following prompt when generating the report plan:
+Take into account the following additional instructions when generating the report plan:
 
 <PROMPT>
 {prompt}
