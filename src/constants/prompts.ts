@@ -95,18 +95,17 @@ export const reportPlanPrompt = `Given the following query from the user:
 {query}
 </QUERY>
 
+And additional instructions:
+<PROMPT>
+{prompt}
+</PROMPT>
+
 Generate a list of sections for the report based on the topic and feedback. When asked to search many entities like suppliers or people, consider clustering categories or search approaches.
 Your plan should be tight and focused with NO overlapping sections or unnecessary filler. Each section needs a sentence summarizing its content.
 
 ${guidelinesPrompt}
 
-Before submitting, review your structure to ensure it has no redundant sections and follows a logical flow.
-
-Take into account the following additional instructions when generating the report plan:
-
-<PROMPT>
-{prompt}
-</PROMPT>`;
+Before submitting, review your structure to ensure it has no redundant sections and follows a logical flow.`;
 
 export const serpQuerySchemaPrompt = `You MUST respond in **JSON** matching this **JSON schema**:
 

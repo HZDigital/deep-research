@@ -430,7 +430,8 @@ class DeepResearch {
     tasks: DeepResearchSearchResult[],
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = true
+    enableFileFormatResource = true,
+    requirements = ""
   ): Promise<FinalReportResult> {
     this.onMessage("progress", { step: "final-report", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
@@ -484,7 +485,7 @@ class DeepResearch {
             learnings,
             sourceList,
             imageList,
-            "",
+            requirements,
             imageList.length > 0 && enableCitationImage,
             sourceList.length > 0 && enableReferences,
             enableFileFormatResource
@@ -588,7 +589,8 @@ class DeepResearch {
         results,
         enableCitationImage,
         enableReferences,
-        enableFileFormatResource
+        enableFileFormatResource,
+        prompt
       );
       return finalReport;
     } catch (err) {

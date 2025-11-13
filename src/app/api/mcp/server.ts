@@ -381,6 +381,7 @@ export function initMcpServer() {
         .describe(
           "The data information collected during the execution of the query task."
         ),
+      requirements: z.string().optional().describe("Specific constraints, preferences, or instructions for the final report."),
       language: z
         .string()
         .optional()
@@ -413,6 +414,7 @@ export function initMcpServer() {
         maxResult,
         enableCitationImage = true,
         enableReferences = true,
+        requirements,
       },
       { signal }
     ) => {
@@ -426,7 +428,9 @@ export function initMcpServer() {
           plan,
           tasks,
           enableCitationImage,
-          enableReferences
+          enableReferences,
+          true,
+          requirements
         );
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
