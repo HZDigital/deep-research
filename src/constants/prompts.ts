@@ -100,7 +100,13 @@ Your plan should be tight and focused with NO overlapping sections or unnecessar
 
 ${guidelinesPrompt}
 
-Before submitting, review your structure to ensure it has no redundant sections and follows a logical flow.`;
+Before submitting, review your structure to ensure it has no redundant sections and follows a logical flow.
+
+Also take into account the following prompt when generating the report plan:
+
+<PROMPT>
+{prompt}
+</PROMPT>`;
 
 export const serpQuerySchemaPrompt = `You MUST respond in **JSON** matching this **JSON schema**:
 

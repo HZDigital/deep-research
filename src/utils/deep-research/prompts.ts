@@ -45,8 +45,8 @@ export function generateQuestionsPrompt(query: string, prompt: string) {
   return systemQuestionPrompt.replace("{query}", query).replace("{prompt}", prompt);
 }
 
-export function writeReportPlanPrompt(query: string) {
-  return reportPlanPrompt.replace("{query}", query);
+export function writeReportPlanPrompt(query: string, prompt: string = "") {
+  return reportPlanPrompt.replace("{query}", query).replace("{prompt}", prompt);
 }
 
 export function generateSerpQueriesPrompt(plan: string) {

@@ -149,14 +149,14 @@ class DeepResearch {
     return content;
   }
 
-  async writeReportPlan(query: string): Promise<string> {
+  async writeReportPlan(query: string, prompt :string = ""): Promise<string> {
     this.onMessage("progress", { step: "report-plan", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const result = streamText({
       model: await this.getThinkingModel(),
       system: getSystemPrompt(),
       prompt: [
-        writeReportPlanPrompt(query),
+        writeReportPlanPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
       temperature: 1,
@@ -576,10 +576,11 @@ class DeepResearch {
     query: string,
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = false
+    enableFileFormatResource = false,
+    prompt: string = ""
   ) {
     try {
-      const reportPlan = await this.writeReportPlan(query);
+      const reportPlan = await this.writeReportPlan(query, prompt);
       const tasks = await this.generateSERPQuery(reportPlan);
       const results = await this.runSearchTask(tasks, enableReferences);
       const finalReport = await this.writeFinalReport(
