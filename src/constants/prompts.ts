@@ -257,8 +257,8 @@ Please write according to the user's writing requirements, if any:
 {requirement}
 </REQUIREMENT>
 
-To answer the user request below, please wirt out a thorough strucutred final report based on the report plan using the learnings from research including sources, data figures, quotes. 
-Length, style and complexity should fit the user requestion (below). User headers to structure the report, build tables if fitting to the retrieved information, build bullet point lists if fitting to list like content. write out argumentation lines - make sure to explain findings and reason the explain it! There is value in the citations, please use them to proove arguemnts and findings! The report should be fit so a consulting partner will approve this to be sent to a client without further refinement. Place the web sources and links close to statements to give correct citations.
+To answer the user request below, please write out a thorough structured final report based on the report plan using the learnings from research including sources, data figures, quotes. 
+Length, style and complexity should fit the user request (below). Use headers to structure the report, build tables if fitting to the retrieved information, build bullet point lists if fitting to list like content. Write out argumentation paragaphs - make sure to explain findings and reason the explain it! There is value in the citations, please use them to prove arguments and findings! The report should be fit so a consulting partner will approve this to be sent to a client without further refinement. Place the web sources and links close to statements to give correct citations.
 **Respond only the final report content, and no additional text before or after.**`;
 
 export const rewritingPrompt = `You are tasked with re-writing the following text to markdown. Ensure you do not change the meaning or story behind the text. 
