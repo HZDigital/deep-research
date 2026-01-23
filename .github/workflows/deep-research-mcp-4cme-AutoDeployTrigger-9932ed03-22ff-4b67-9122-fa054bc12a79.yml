@@ -5,7 +5,7 @@ on:
   # Automatically trigger it when detected changes in repo
   push:
     branches: 
-      [ main ]
+      [ 4c-prod ]
     paths:
     - '**'
     - '.github/workflows/deep-research-mcp-4cme-AutoDeployTrigger-9932ed03-22ff-4b67-9122-fa054bc12a79.yml'
