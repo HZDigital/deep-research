@@ -604,7 +604,7 @@ function useDeepResearch() {
           content: messageContent,
         },
       ],
-      temperature: 0.5,
+      temperature: 0,
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
