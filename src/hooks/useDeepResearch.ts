@@ -31,7 +31,7 @@ import {
   writeFinalReportPrompt,
   getSERPQuerySchema,
 } from "@/utils/deep-research/prompts";
-import { isNetworkingModel } from "@/utils/model";
+import { isNetworkingModel, isThinkingModel } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { parseError } from "@/utils/error";
 import { pick, flat, unique } from "radash";
@@ -595,8 +595,9 @@ function useDeepResearch() {
       });
     }
 
+    const thinkingModelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: thinkingModelProvider,
       system: [getSystemPrompt(), outputGuidelinesPrompt].join("\n\n"),
       messages: [
         {
@@ -604,7 +605,8 @@ function useDeepResearch() {
           content: messageContent,
         },
       ],
-      temperature: 1,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModelProvider.modelId) ? {} : { temperature: 1 }),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
