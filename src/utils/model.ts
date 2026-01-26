@@ -7,6 +7,7 @@ export function multiApiKeyPolling(apiKeys = "") {
 export function isThinkingModel(model: string) {
   return (
     model.includes("thinking") ||
+    model.startsWith("gpt-5.2") ||
     model.startsWith("gemini-2.5-pro") ||
     model.startsWith("gemini-2.5-flash")
   );
@@ -86,6 +87,7 @@ export function filterOpenAIModelList(modelList: string[]) {
     if (
       model.startsWith("gpt-4o") ||
       model.startsWith("gpt-4.1") ||
+      model.startsWith("gpt-5") ||
       !model.includes("nano")
     ) {
       networkingModelList.push(model);
