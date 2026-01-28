@@ -3,6 +3,7 @@ import { streamText, smoothStream } from "ai";
 import { toast } from "sonner";
 import { useSettingStore } from "@/store/setting";
 import useModelProvider from "@/hooks/useAiProvider";
+import { getSafeTemperatureOptions } from "@/utils/model";
 import {
   AIWritePrompt,
   changeLanguagePrompt,
@@ -38,9 +39,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function AIWrite(prompt: string, systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("aiWrite");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: AIWritePrompt(value, prompt, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -56,9 +59,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function translate(lang: string, systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("translate");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: changeLanguagePrompt(value, lang, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -74,9 +79,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function changeReadingLevel(level: string, systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("readingLevel");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: changeReadingLevelPrompt(value, level, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -92,9 +99,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function adjustLength(length: string, systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("adjustLength");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: adjustLengthPrompt(value, length, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -110,9 +119,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function continuation(systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("continuation");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: continuationPrompt(value, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -128,9 +139,11 @@ function useArtifact({ value, onChange }: ArtifactProps) {
   async function addEmojis(systemInstruction?: string) {
     const { thinkingModel } = getModel();
     setLoadingAction("addEmojis");
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       prompt: addEmojisPrompt(value, systemInstruction),
+      ...getSafeTemperatureOptions((modelProvider as any).modelId),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });

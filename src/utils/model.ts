@@ -142,3 +142,12 @@ export function getCustomModelList(customModelList: string[]) {
   });
   return { availableModelList, disabledModelList };
 }
+
+export function getSafeTemperatureOptions(modelId?: string) {
+  if (!modelId) return {};
+  if (modelId.startsWith("gpt-5")) {
+    return { temperature: 1 };
+  }
+
+  return {};
+}
