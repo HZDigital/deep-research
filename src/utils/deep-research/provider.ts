@@ -52,9 +52,15 @@ export async function createAIProvider({
       baseURL,
       apiKey,
     });
-    return model.startsWith("gpt-4o")
-      ? openai.responses(model)
-      : openai(model, settings);
+    const useResponsesApi =
+      model.startsWith("gpt-4o") ||
+      model.startsWith("gpt-4.1") ||
+      model.startsWith("gpt-5") ||
+      model.startsWith("o1") ||
+      model.startsWith("o3") ||
+      model.startsWith("o4");
+
+    return useResponsesApi ? openai.responses(model) : openai(model, settings);
   } else if (provider === "anthropic") {
     const { createAnthropic } = await import("@ai-sdk/anthropic");
     const anthropic = createAnthropic({
