@@ -13,7 +13,7 @@ import {
   getSERPQuerySchema,
 } from "./prompts";
 import { outputGuidelinesPrompt } from "@/constants/prompts";
-import { isNetworkingModel, isThinkingModel, getSafeTemperatureOptions } from "@/utils/model";
+import { isNetworkingModel, getSafeTemperatureOptions } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { pick, unique, flat, isFunction } from "radash";
 

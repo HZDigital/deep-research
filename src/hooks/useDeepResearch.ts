@@ -33,7 +33,6 @@ import {
 } from "@/utils/deep-research/prompts";
 import {
   isNetworkingModel,
-  isThinkingModel,
   getSafeTemperatureOptions,
 } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
