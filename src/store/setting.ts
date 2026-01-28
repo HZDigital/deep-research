@@ -67,6 +67,8 @@ export interface SettingStore {
   exaScope: string;
   bochaApiKey: string;
   bochaApiProxy: string;
+  braveApiKey: string;
+  braveApiProxy: string;
   searxngApiProxy: string;
   searxngScope: string;
   parallelSearch: number;
@@ -92,8 +94,8 @@ export const defaultValues: SettingStore = {
   mode: "",
   apiKey: "",
   apiProxy: "",
-  thinkingModel: "gemini-2.0-flash-thinking-exp",
-  networkingModel: "gemini-2.0-flash",
+  thinkingModel: "gemini-2.5-pro",
+  networkingModel: "gemini-2.5-flash",
   googleVertexProject: "",
   googleVertexLocation: "",
   googleClientEmail: "",
@@ -107,8 +109,8 @@ export const defaultValues: SettingStore = {
   openRouterNetworkingModel: "",
   openAIApiKey: "",
   openAIApiProxy: "",
-  openAIThinkingModel: "gpt-4o",
-  openAINetworkingModel: "gpt-4o-mini",
+  openAIThinkingModel: "gpt-5",
+  openAINetworkingModel: "gpt-5-mini",
   anthropicApiKey: "",
   anthropicApiProxy: "",
   anthropicThinkingModel: "",
@@ -153,6 +155,8 @@ export const defaultValues: SettingStore = {
   exaScope: "research paper",
   bochaApiKey: "",
   bochaApiProxy: "",
+  braveApiKey: "",
+  braveApiProxy: "",
   searxngApiProxy: "",
   searxngScope: "all",
   parallelSearch: 1,
@@ -175,6 +179,6 @@ export const useSettingStore = create(
       update: (values) => set(values),
       reset: () => set(defaultValues),
     }),
-    { name: "setting" }
-  )
+    { name: "setting" },
+  ),
 );

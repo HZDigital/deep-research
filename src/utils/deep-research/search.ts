@@ -3,6 +3,7 @@ import {
   FIRECRAWL_BASE_URL,
   EXA_BASE_URL,
   BOCHA_BASE_URL,
+  BRAVE_BASE_URL,
   SEARXNG_BASE_URL,
 } from "@/constants/urls";
 import { rewritingPrompt } from "@/constants/prompts";
@@ -125,6 +126,51 @@ export interface SearchProviderOptions {
   scope?: string;
 }
 
+type BraveSearchResult = {
+  title: string;
+  url: string;
+  is_source_local: boolean;
+  is_source_both: boolean;
+  description: string;
+  page_age: string;
+  page_fetched: string;
+  fetched_content_timestamp: number;
+  profile: {
+    name: string;
+    url: string;
+    long_name: string;
+    img: string;
+  };
+  language: string;
+};
+
+type BreaveImage = {
+  type: string;
+  title: string;
+  url: string;
+  source: string;
+  page_fetched: string;
+  thumbnail: {
+    src: string;
+    width: number;
+    height: number;
+  };
+  properties: {
+    url: string;
+    placeholder: string;
+    width: number;
+    height: number;
+  };
+  meta_url: {
+    scheme: string;
+    netloc: string;
+    hostname: string;
+    favicon: string;
+    path: string;
+  };
+  confidence: string;
+};
+
 // Helper function for retrying fetch with timeout
 async function fetchWithRetry(
   url: string,
@@ -217,7 +263,7 @@ export async function createSearchProvider({
           include_answer: false,
           include_raw_content: "markdown",
         }),
-      }
+      },
     );
     const { results = [], images = [] } = await response.json();
     return {
@@ -256,7 +302,7 @@ export async function createSearchProvider({
           },
           timeout: 60000,
         }),
-      }
+      },
     );
     const { data = [] } = await response.json();
     return {
@@ -291,7 +337,7 @@ export async function createSearchProvider({
             },
           },
         }),
-      }
+      },
     );
     const { results = [] } = await response.json();
     const images: ImageSource[] = [];
@@ -328,7 +374,7 @@ export async function createSearchProvider({
           summary: true,
           count: maxResult,
         }),
-      }
+      },
     );
     const { data = {} } = await response.json();
     const results = data.webPages?.value || [];
@@ -343,11 +389,68 @@ export async function createSearchProvider({
         })) as Source[],
       images: (imageResults as BochaImage[]).map((item) => {
         const matchingResult = (results as BochaSearchResult[]).find(
-          (result) => result.url === item.hostPageUrl
+          (result) => result.url === item.hostPageUrl,
         );
         return {
           url: item.contentUrl,
           description: item.name || matchingResult?.name,
+        };
+      }) as ImageSource[],
+    };
+  } else if (provider === "brave") {
+    const params = {
+      q: query,
+      count: maxResult,
+    };
+    const searchQuery = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      searchQuery.append(key, value.toString());
+    }
+
+    const response = await fetch(
+      `${completePath(baseURL || BRAVE_BASE_URL, "/v1")}/web/search?${searchQuery.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip",
+          "X-Subscription-Token": apiKey,
+        },
+        credentials: "omit",
+      },
+    );
+
+    const imageResponse = await fetch(
+      `${completePath(baseURL || BRAVE_BASE_URL, "/v1")}/images/search?${searchQuery.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip",
+          "X-Subscription-Token": apiKey,
+        },
+        credentials: "omit",
+      },
+    );
+
+    const [webSearchResults, imageSearchResults] = await Promise.all([
+      response.json(),
+      imageResponse.json(),
+    ]);
+    const results = webSearchResults?.web?.results || [];
+    const imageResults = imageSearchResults?.results || [];
+    return {
+      sources: (results as BraveSearchResult[])
+        .filter((item) => item.description && item.url)
+        .map((result) => ({
+          content: result.description,
+          url: result.url,
+          title: result.title,
+        })) as Source[],
+      images: (imageResults as BreaveImage[]).map((item) => {
+        return {
+          url: item.url,
+          description: item.title,
         };
       }) as ImageSource[],
     };
@@ -388,7 +491,7 @@ export async function createSearchProvider({
     // Use retry mechanism for searxng
     const response = await fetchWithRetry(
       `${completePath(
-        baseURL || SEARXNG_BASE_URL
+        baseURL || SEARXNG_BASE_URL,
       )}/search?${searchQuery.toString()}`,
       baseURL?.startsWith(local.origin)
         ? { method: "POST", credentials: "omit", headers }
@@ -407,7 +510,7 @@ export async function createSearchProvider({
     const rearrangedResults = sort(
       results as SearxngSearchResult[],
       (item) => item.score,
-      true
+      true,
     );
     return {
       sources: rearrangedResults

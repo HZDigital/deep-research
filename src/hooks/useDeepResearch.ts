@@ -31,7 +31,7 @@ import {
   writeFinalReportPrompt,
   getSERPQuerySchema,
 } from "@/utils/deep-research/prompts";
-import { isNetworkingModel } from "@/utils/model";
+import { isNetworkingModel, isThinkingModel } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { parseError } from "@/utils/error";
 import { pick, flat, unique } from "radash";
@@ -84,7 +84,9 @@ function useDeepResearch() {
         // Enable OpenAI's built-in search tool
         if (
           ["openai", "azure", "openaicompatible"].includes(provider) &&
-          model.startsWith("gpt-4o")
+          (model.startsWith("gpt-4o") ||
+            model.startsWith("gpt-4.1") ||
+            model.startsWith("gpt-5"))
         ) {
           return {
             web_search_preview: openai.tools.webSearchPreview({
@@ -595,8 +597,9 @@ function useDeepResearch() {
       });
     }
 
+    const thinkingModelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: thinkingModelProvider,
       system: [getSystemPrompt(), outputGuidelinesPrompt].join("\n\n"),
       messages: [
         {
@@ -604,7 +607,8 @@ function useDeepResearch() {
           content: messageContent,
         },
       ],
-      temperature: 0.5,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModelProvider.modelId) ? {} : { temperature: 1 }),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });

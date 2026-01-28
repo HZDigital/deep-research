@@ -13,7 +13,7 @@ import {
   getSERPQuerySchema,
 } from "./prompts";
 import { outputGuidelinesPrompt } from "@/constants/prompts";
-import { isNetworkingModel } from "@/utils/model";
+import { isNetworkingModel, isThinkingModel } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { pick, unique, flat, isFunction } from "radash";
 
@@ -113,14 +113,16 @@ class DeepResearch {
   async askQuestions(query: string, prompt: string = ""): Promise<string> {
     this.onMessage("progress", { step: "ask-questions", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
     const result = streamText({
-      model: await this.getThinkingModel(),
+      model: thinkingModel,
       system: getSystemPrompt(),
       prompt: [
         generateQuestionsPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      temperature: 1,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<questions>\n" });
@@ -152,14 +154,16 @@ class DeepResearch {
   async writeReportPlan(query: string, prompt :string = ""): Promise<string> {
     this.onMessage("progress", { step: "report-plan", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
     const result = streamText({
-      model: await this.getThinkingModel(),
+      model: thinkingModel,
       system: getSystemPrompt(),
       prompt: [
         writeReportPlanPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      temperature: 1,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<report-plan>\n" });
@@ -193,14 +197,16 @@ class DeepResearch {
   ): Promise<DeepResearchSearchTask[]> {
     this.onMessage("progress", { step: "serp-query", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
     const { text } = await generateText({
-      model: await this.getThinkingModel(),
+      model: thinkingModel,
       system: getSystemPrompt(),
       prompt: [
         generateSerpQueriesPrompt(reportPlan),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      temperature: 1,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
     });
     const querySchema = getSERPQuerySchema();
     let content = "";
@@ -253,7 +259,9 @@ class DeepResearch {
           if (
             provider === "model" &&
             ["openai", "azure", "openaicompatible"].includes(taskModel) &&
-            taskModel.startsWith("gpt-4o")
+            (taskModel.startsWith("gpt-4o") ||
+              taskModel.startsWith("gpt-4.1") ||
+              taskModel.startsWith("gpt-5"))
           ) {
             const { openai } = await import("@ai-sdk/openai");
             return {
@@ -503,8 +511,9 @@ class DeepResearch {
       });
     }
 
+    const thinkingModel = await this.getThinkingModel();
     const result = streamText({
-      model: await this.getThinkingModel(),
+      model: thinkingModel,
       system: [getSystemPrompt(), outputGuidelinesPrompt].join("\n\n"),
       messages: [
         {
@@ -512,7 +521,8 @@ class DeepResearch {
           content: messageContent,
         },
       ],
-      temperature: 1,
+      // Don't include temperature for thinking models as they don't support it
+      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
       topP: 0.85,
     });
     let content = "";
