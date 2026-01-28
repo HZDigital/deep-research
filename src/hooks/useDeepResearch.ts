@@ -154,7 +154,7 @@ function useDeepResearch() {
         generateQuestionsPrompt(question, ""),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
-      ...getSafeTemperatureOptions((searchSettings as any).model?.modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -192,7 +192,7 @@ function useDeepResearch() {
       prompt: [writeReportPlanPrompt(query), getResponseLanguagePrompt()].join(
         "\n\n"
       ),
-      ...getSafeTemperatureOptions((searchSettings as any).model?.modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -242,7 +242,7 @@ function useDeepResearch() {
         processSearchKnowledgeResultPrompt(query, researchGoal, knowledges),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(networkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -349,7 +349,7 @@ function useDeepResearch() {
                   ),
                   getResponseLanguagePrompt(),
                 ].join("\n\n"),
-                ...getSafeTemperatureOptions((modelProvider as any).modelId),
+                ...getSafeTemperatureOptions(networkingModel),
                 experimental_transform: smoothTextStream(smoothTextStreamType),
                 onError: handleError,
               });
@@ -364,7 +364,7 @@ function useDeepResearch() {
                   processResultPrompt(item.query, item.researchGoal),
                   getResponseLanguagePrompt(),
                 ].join("\n\n"),
-                ...getSafeTemperatureOptions((searchSettings as any).model?.modelId),
+                ...getSafeTemperatureOptions(networkingModel),
                 experimental_transform: smoothTextStream(smoothTextStreamType),
                 onError: handleError,
               });
@@ -378,7 +378,7 @@ function useDeepResearch() {
                 processResultPrompt(item.query, item.researchGoal),
                 getResponseLanguagePrompt(),
               ].join("\n\n"),
-              ...getSafeTemperatureOptions((modelProvider as any).modelId),
+              ...getSafeTemperatureOptions(networkingModel),
               experimental_transform: smoothTextStream(smoothTextStreamType),
               onError: (err) => {
                 taskStore.updateTask(item.query, { state: "failed" });
@@ -479,7 +479,7 @@ function useDeepResearch() {
         reviewSerpQueriesPrompt(reportPlan, learnings, suggestion),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -689,7 +689,7 @@ function useDeepResearch() {
           generateSerpQueriesPrompt(reportPlan),
           getResponseLanguagePrompt(),
         ].join("\n\n"),
-        ...getSafeTemperatureOptions((modelProvider as any).modelId),
+        ...getSafeTemperatureOptions(thinkingModel),
         experimental_transform: smoothTextStream(smoothTextStreamType),
         onError: handleError,
       });

@@ -51,7 +51,7 @@ function KnowledgeGraph({ open, onClose }: Props) {
         knowledgeGraphPrompt +
         `\n\n**The node text uses the same language as the article**`,
       prompt: finalReport,
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       onError: handleError,
     });
     let text = "";

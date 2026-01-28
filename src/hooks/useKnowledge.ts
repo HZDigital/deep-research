@@ -85,7 +85,7 @@ function useKnowledge() {
         model: modelProvider,
         prompt: text,
         system: rewritingPrompt,
-        ...getSafeTemperatureOptions((modelProvider as any).modelId),
+        ...getSafeTemperatureOptions(networkingModel),
         onFinish: () => {
           const currentTime = Date.now();
           knowledgeStore.save({
@@ -273,7 +273,7 @@ function useKnowledge() {
             model: modelProvider,
             prompt: result.content,
             system: rewritingPrompt,
-            ...getSafeTemperatureOptions((modelProvider as any).modelId),
+            ...getSafeTemperatureOptions(networkingModel),
             onFinish: () => {
               const currentTime = Date.now();
               knowledgeStore.save({

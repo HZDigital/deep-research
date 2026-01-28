@@ -43,7 +43,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: AIWritePrompt(value, prompt, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -63,7 +63,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: changeLanguagePrompt(value, lang, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -83,7 +83,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: changeReadingLevelPrompt(value, level, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -103,7 +103,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: adjustLengthPrompt(value, length, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -123,7 +123,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: continuationPrompt(value, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -143,7 +143,7 @@ function useArtifact({ value, onChange }: ArtifactProps) {
     const result = streamText({
       model: modelProvider,
       prompt: addEmojisPrompt(value, systemInstruction),
-      ...getSafeTemperatureOptions((modelProvider as any).modelId),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
