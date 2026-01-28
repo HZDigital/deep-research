@@ -622,8 +622,7 @@ function useDeepResearch() {
           content: messageContent,
         },
       ],
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModelProvider.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });

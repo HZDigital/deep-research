@@ -145,9 +145,17 @@ export function getCustomModelList(customModelList: string[]) {
 
 export function getSafeTemperatureOptions(modelId?: string) {
   if (!modelId) return {};
+  
+  // GPT-5 models require temperature=1 (they reject 0)
   if (modelId.includes("gpt-5")) {
     return { temperature: 1 };
   }
-
-  return {};
+  
+  // Other thinking models don't support temperature at all - omit it
+  if (isThinkingModel(modelId)) {
+    return {};
+  }
+  
+  // All other models: set temperature=1 as default
+  return { temperature: 1 };
 }
