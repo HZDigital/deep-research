@@ -15,6 +15,7 @@ import {
   ThinkTagStreamProcessor,
 } from "@/utils/text";
 import { parseError } from "@/utils/error";
+import { getSafeTemperatureOptions } from "@/utils/model";
 import { omit } from "radash";
 
 const MAX_CHUNK_LENGTH = 10000;
@@ -79,10 +80,12 @@ function useKnowledge() {
       let content = "";
       let reasoning = "";
       const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+      const modelProvider = await createModelProvider(networkingModel);
       const result = streamText({
-        model: await createModelProvider(networkingModel),
+        model: modelProvider,
         prompt: text,
         system: rewritingPrompt,
+        ...getSafeTemperatureOptions(networkingModel),
         onFinish: () => {
           const currentTime = Date.now();
           knowledgeStore.save({
@@ -265,10 +268,12 @@ function useKnowledge() {
           const { accessPassword } = useSettingStore.getState();
           const result = await localCrawler(url, accessPassword);
           let content = "";
+          const modelProvider = await createModelProvider(networkingModel);
           const stream = streamText({
-            model: await createModelProvider(networkingModel),
+            model: modelProvider,
             prompt: result.content,
             system: rewritingPrompt,
+            ...getSafeTemperatureOptions(networkingModel),
             onFinish: () => {
               const currentTime = Date.now();
               knowledgeStore.save({
