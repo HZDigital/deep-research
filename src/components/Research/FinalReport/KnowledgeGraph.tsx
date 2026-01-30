@@ -17,6 +17,7 @@ import useModelProvider from "@/hooks/useAiProvider";
 import { useTaskStore } from "@/store/task";
 import { knowledgeGraphPrompt } from "@/constants/prompts";
 import { parseError } from "@/utils/error";
+import { getSafeTemperatureOptions } from "@/utils/model";
 import { cn } from "@/utils/style";
 
 const MagicDownView = dynamic(() => import("@/components/MagicDown/View"));
@@ -43,12 +44,14 @@ function KnowledgeGraph({ open, onClose }: Props) {
     const { finalReport, updateKnowledgeGraph } = useTaskStore.getState();
     const { thinkingModel } = getModel();
     setLoading(true);
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       system:
         knowledgeGraphPrompt +
         `\n\n**The node text uses the same language as the article**`,
       prompt: finalReport,
+      ...getSafeTemperatureOptions(thinkingModel),
       onError: handleError,
     });
     let text = "";

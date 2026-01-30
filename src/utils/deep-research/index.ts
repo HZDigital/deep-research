@@ -13,7 +13,7 @@ import {
   getSERPQuerySchema,
 } from "./prompts";
 import { outputGuidelinesPrompt } from "@/constants/prompts";
-import { isNetworkingModel, isThinkingModel } from "@/utils/model";
+import { isNetworkingModel, getSafeTemperatureOptions } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { pick, unique, flat, isFunction } from "radash";
 
@@ -121,8 +121,7 @@ class DeepResearch {
         generateQuestionsPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<questions>\n" });
@@ -162,8 +161,7 @@ class DeepResearch {
         writeReportPlanPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<report-plan>\n" });
@@ -205,8 +203,7 @@ class DeepResearch {
         generateSerpQueriesPrompt(reportPlan),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     const querySchema = getSERPQuerySchema();
     let content = "";
@@ -521,8 +518,7 @@ class DeepResearch {
           content: messageContent,
         },
       ],
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
       topP: 0.85,
     });
     let content = "";
