@@ -129,10 +129,6 @@ export function initMcpServer() {
         .optional()
         .describe(
           "Whether to include citation links in search results and final reports."),
-      prompt: z
-        .string()
-        .optional()
-        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Deep Research",
@@ -141,7 +137,7 @@ export function initMcpServer() {
       openWorldHint: true, // Uses external search and AI APIs
     },
     async (
-      { query, language, maxResult, enableCitationImage, enableReferences, prompt  },
+      { query, language, maxResult, enableCitationImage, enableReferences },
       { signal }
     ) => {
       signal.addEventListener("abort", () => {
@@ -152,7 +148,6 @@ export function initMcpServer() {
         const deepResearch = initDeepResearchServer({
           language,
           maxResult,
-          promptOverrides: prompt,
         });
         const result = await deepResearch.start(
           query,
@@ -185,12 +180,8 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic to generate questions for."),
       language: z.string().optional().describe("The response Language."),
-      prompt: z
-        .string()
-        .optional()
-        .describe("Custom Prompt with instructions and information."),
     },
-    async ({ query, language, prompt }, { signal }) => {
+    async ({ query, language }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
@@ -198,7 +189,6 @@ export function initMcpServer() {
       try {
         const deepResearch = initDeepResearchServer({
           language,
-          promptOverrides: prompt,
         });
         const result = await deepResearch.askQuestions(query);
         return {
@@ -226,10 +216,6 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic for deep research."),
       language: z.string().optional().describe("The response Language."),
-      prompt: z
-        .string()
-        .optional()
-        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Write Research Plan",
@@ -237,7 +223,7 @@ export function initMcpServer() {
       destructiveHint: false,
       openWorldHint: true, // Uses external AI API
     },
-    async ({ query, language, prompt }, { signal }) => {
+    async ({ query, language }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
@@ -245,7 +231,6 @@ export function initMcpServer() {
       try {
         const deepResearch = initDeepResearchServer({
           language,
-          promptOverrides: prompt,
         });
         const result = await deepResearch.writeReportPlan(query);
         return {
