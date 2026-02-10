@@ -131,6 +131,7 @@ export function initMcpServer() {
           "Whether to include citation links in search results and final reports."),
       prompt: z
         .string()
+        .optional()
         .describe("Custom Prompt with instructions and information."),
     },
     {
@@ -186,6 +187,7 @@ export function initMcpServer() {
       language: z.string().optional().describe("The response Language."),
       prompt: z
         .string()
+        .optional()
         .describe("Custom Prompt with instructions and information."),
     },
     async ({ query, language, prompt }, { signal }) => {
@@ -226,6 +228,7 @@ export function initMcpServer() {
       language: z.string().optional().describe("The response Language."),
       prompt: z
         .string()
+        .optional()
         .describe("Custom Prompt with instructions and information."),
     },
     {
