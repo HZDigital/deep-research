@@ -308,7 +308,7 @@ function useDeepResearch() {
     const modelProvider = await createModelProvider(networkingModel);
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const searchResult = streamText({
-      model: await createModelProvider(networkingModel),
+      model: modelProvider,
       system: getSystemPrompt(promptOverrides),
       prompt: [
         processSearchKnowledgeResultPrompt(
@@ -417,7 +417,7 @@ function useDeepResearch() {
                 sources.length > 0 && references === "enable";
               const modelProvider = await createModelProvider(networkingModel);
               searchResult = streamText({
-                model: await createModelProvider(networkingModel),
+                model: modelProvider,
                 system: getSystemPrompt(promptOverrides),
                 prompt: [
                   processSearchResultPrompt(
@@ -456,7 +456,7 @@ function useDeepResearch() {
           } else {
             const modelProvider = await createModelProvider(networkingModel);
             searchResult = streamText({
-              model: await createModelProvider(networkingModel),
+              model: modelProvider,
               system: getSystemPrompt(promptOverrides),
               prompt: [
                 processResultPrompt(
@@ -562,7 +562,7 @@ function useDeepResearch() {
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       system: getSystemPrompt(promptOverrides),
       prompt: [
         reviewSerpQueriesPrompt(
@@ -724,7 +724,7 @@ function useDeepResearch() {
 
     const thinkingModelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: thinkingModelProvider,
       system: [
         getSystemPrompt(promptOverrides),
         getOutputGuidelinesPrompt(promptOverrides),
@@ -796,7 +796,7 @@ function useDeepResearch() {
       const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
       const modelProvider = await createModelProvider(thinkingModel);
       const result = streamText({
-        model: await createModelProvider(thinkingModel),
+        model: modelProvider,
         system: getSystemPrompt(promptOverrides),
         prompt: [
           generateSerpQueriesPrompt(reportPlan, promptOverrides),

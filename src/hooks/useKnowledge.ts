@@ -99,12 +99,8 @@ function useKnowledge() {
       const result = streamText({
         model: modelProvider,
         prompt: text,
-<<<<<<< HEAD
         system: getRewritingPrompt(),
-=======
-        system: rewritingPrompt,
         ...getSafeTemperatureOptions(networkingModel),
->>>>>>> staging
         onFinish: () => {
           const currentTime = Date.now();
           knowledgeStore.save({
@@ -291,12 +287,8 @@ function useKnowledge() {
           const stream = streamText({
             model: modelProvider,
             prompt: result.content,
-<<<<<<< HEAD
             system: getRewritingPrompt(),
-=======
-            system: rewritingPrompt,
             ...getSafeTemperatureOptions(networkingModel),
->>>>>>> staging
             onFinish: () => {
               const currentTime = Date.now();
               knowledgeStore.save({

@@ -119,15 +119,15 @@ class DeepResearch {
       : `**Respond in the same language as the user's language**`;
   }
 
-  async askQuestions(query: string, prompt: string = ""): Promise<string> {
+  async askQuestions(query: string): Promise<string> {
     this.onMessage("progress", { step: "ask-questions", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const thinkingModel = await this.getThinkingModel();
     const result = streamText({
       model: thinkingModel,
-      system: getSystemPrompt(),
+      system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        generateQuestionsPrompt(query, prompt),
+        generateQuestionsPrompt(query, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
       ...getSafeTemperatureOptions(thinkingModel.modelId),
@@ -159,15 +159,15 @@ class DeepResearch {
     return content;
   }
 
-  async writeReportPlan(query: string, prompt :string = ""): Promise<string> {
+  async writeReportPlan(query: string): Promise<string> {
     this.onMessage("progress", { step: "report-plan", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const thinkingModel = await this.getThinkingModel();
     const result = streamText({
       model: thinkingModel,
-      system: getSystemPrompt(),
+      system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        writeReportPlanPrompt(query, prompt),
+        writeReportPlanPrompt(query, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
       ...getSafeTemperatureOptions(thinkingModel.modelId),
@@ -602,11 +602,10 @@ class DeepResearch {
     query: string,
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = false,
-    prompt: string = ""
+    enableFileFormatResource = false
   ) {
     try {
-      const reportPlan = await this.writeReportPlan(query, prompt);
+      const reportPlan = await this.writeReportPlan(query);
       const tasks = await this.generateSERPQuery(reportPlan);
       const results = await this.runSearchTask(tasks, enableReferences);
       const finalReport = await this.writeFinalReport(
@@ -614,8 +613,7 @@ class DeepResearch {
         results,
         enableCitationImage,
         enableReferences,
-        enableFileFormatResource,
-        prompt
+        enableFileFormatResource
       );
       return finalReport;
     } catch (err) {
