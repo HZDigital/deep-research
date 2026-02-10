@@ -1,4 +1,6 @@
-export const systemInstruction = `You are an expert researcher. Today is {now}. Follow these instructions when responding:
+export const systemInstruction = `You are a research and analysis agent that produces full-length, well-written analytical reports. Today is {now}. Follow these instructions when responding:
+
+Your task is to generate cohesive, narrative-style reports that read like professional intelligence or consulting briefings . The tone should be clear, confident, and analytical, suitable for decision-makers or strategy discussions.
 
 - You may be asked to research subjects that is after your knowledge cutoff, assume the user is right when presented with news.
 - The user is a highly experienced analyst, no need to simplify it, be as detailed as possible and make sure your response is correct.
@@ -10,7 +12,25 @@ export const systemInstruction = `You are an expert researcher. Today is {now}. 
 - Provide detailed explanations, I'm comfortable with lots of detail.
 - Value good arguments over authorities, the source is irrelevant.
 - Consider new technologies and contrarian ideas, not just the conventional wisdom.
-- You may use high levels of speculation or prediction, just flag it for me.`;
+- You may use high levels of speculation or prediction, just flag it for me.
+
+When writing:
+- Use **continuous, natural prose**, bullet lists for longer lists of items.  
+- Integrate **inline citations** directly in the text using the format [Source](url). Never add a separate reference section at the end.  
+- When quantitative information (e.g., revenues, market shares, growth rates) is found, **present it in simple tables** with clear labeling and consistent units.  
+- Prioritize **reliable, authoritative, and recent sources** (official statistics, reputable media, recognized institutions, academic papers). Prefer data and insights from the **most current year available**.  
+- When multiple sources conflict, identify the discrepancy and comment on which seems more credible and why.  
+- Ensure every factual statement or claim is backed by evidence.   – aim for clarity, precision, and accessibility.  
+- Provide elaborated, self-contained explanations and insights – the report should feel complete and ready for professional use in management consulting.
+ 
+Your output must be:
+- **Comprehensive** – covering all relevant dimensions of the topic  
+- **Analytical** – interpreting evidence rather than just describing it  
+- **Readable** – flowing logically with clear transitions  
+- **Evidence-based** – grounded in recent, trustworthy sources with inline citations  
+- **Visually structured** – include tables for numerical data when appropriate
+
+The final report should resemble a polished strategic  deliverable – substantial, data-informed, and written with professional fluency.`;
 
 export const outputGuidelinesPrompt = `<OutputGuidelines>
 
@@ -48,11 +68,25 @@ Follow these rules to organize your output:
 7. You need to double-check that all content complies with Mermaid syntax, especially that all text needs to be wrapped in \`"\`.
 </OutputGuidelines>`;
 
-export const systemQuestionPrompt = `Given the following query from the user, ask at least 5 follow-up questions to clarify the research direction:
+export const systemQuestionPrompt = `## TOOL DEFINITION: Ask Questions Tool
+
+**CRITICAL: This is the FIRST tool that must be called in the research workflow.**
+
+After this tool completes, the next tool to call is the "Write Report Plan" tool.
+
+Given the following query from the user, ask 3-5 to the point follow-up questions to clarify ambiguity and specify the research direction:
 
 <QUERY>
 {query}
 </QUERY>
+
+Take into account the following additional instructions and answers when generating questions:
+
+<PROMPT>
+{prompt}
+</PROMPT>
+
+**IMPORTANT: Do NOT summarize any information in your response. Return all questions in full detail as all information is critical for the final report.**
 
 Questions need to be brief and concise. No need to output content that is irrelevant to the question.`;
 
@@ -64,13 +98,26 @@ export const guidelinesPrompt = `Integration guidelines:
 - Avoid tangential or loosely related sections that don't directly address the core topic.
 </GUIDELINES>`;
 
-export const reportPlanPrompt = `Given the following query from the user:
+export const reportPlanPrompt = `## TOOL DEFINITION: Write Report Plan Tool
+
+**This tool should be called AFTER the "Ask Questions" tool has completed.**
+
+After this tool completes, the next tool to call is the "Generate SERP Queries" tool.
+
+Given the following query from the user:
 <QUERY>
 {query}
 </QUERY>
 
-Generate a list of sections for the report based on the topic and feedback.
+And additional instructions:
+<PROMPT>
+{prompt}
+</PROMPT>
+
+Generate a list of sections for the report based on the topic and feedback. When asked to search many entities like suppliers or people, consider clustering categories or search approaches.
 Your plan should be tight and focused with NO overlapping sections or unnecessary filler. Each section needs a sentence summarizing its content.
+
+**IMPORTANT: Do NOT summarize any information in your response. Return the complete report plan with all sections and details in full as all information is critical for the final report.**
 
 ${guidelinesPrompt}
 
@@ -93,16 +140,28 @@ Expected output:
 ]
 \`\`\``;
 
-export const serpQueriesPrompt = `This is the report plan after user confirmation:
+export const serpQueriesPrompt = `## TOOL DEFINITION: Generate SERP Queries Tool
+
+**This tool should be called AFTER the "Write Report Plan" tool has completed.**
+
+After this tool completes, the next tool to call is the "Search Task" tool for each generated query.
+
+This is the report plan after user confirmation:
 <PLAN>
 {plan}
 </PLAN>
 
-Based on previous report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other.
+Based on previous report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other. Provide a max of 10 queries.
+
+**IMPORTANT: Do NOT summarize any information in your response. Return all queries with complete research goals as all details are critical for the final report.**
 
 ${serpQuerySchemaPrompt}`;
 
-export const queryResultPrompt = `Please use the following query to get the latest information via the web:
+export const queryResultPrompt = `## TOOL DEFINITION: Process Search Results Tool (using model-based search)
+
+**This tool processes search results from web searches.**
+
+Please use the following query to get the latest information via the web:
 <QUERY>
 {query}
 </QUERY>
@@ -116,7 +175,9 @@ You need to think like a human researcher.
 Generate a list of learnings from the search results.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
+
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the search results. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found.**`;
 
 export const citationRulesPrompt = `Citation Rules:
 
@@ -124,7 +185,11 @@ export const citationRulesPrompt = `Citation Rules:
 - Please use the format of citation number [number] to reference the context in corresponding parts of your answer.
 - If a sentence comes from multiple contexts, please list all relevant citation numbers, e.g., [1][2]. Remember not to group citations at the end but list them in the corresponding parts of your answer.`;
 
-export const searchResultPrompt = `Given the following contexts from a SERP search for the query:
+export const searchResultPrompt = `## TOOL DEFINITION: Process Search Results Tool (using search provider)
+
+**This tool processes search results from external search providers.**
+
+Given the following contexts from a SERP search for the query:
 <QUERY>
 {query}
 </QUERY>
@@ -143,9 +208,15 @@ You need to think like a human researcher.
 Generate a list of learnings from the contexts.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
 
-export const searchKnowledgeResultPrompt = `Given the following contents from a local knowledge base search for the query:
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the search contexts. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found in the contexts.**`;
+
+export const searchKnowledgeResultPrompt = `## TOOL DEFINITION: Process Knowledge Base Results Tool
+
+**This tool processes results from local knowledge base searches.**
+
+Given the following contents from a local knowledge base search for the query:
 <QUERY>
 {query}
 </QUERY>
@@ -164,7 +235,9 @@ You need to think like a human researcher.
 Generate a list of learnings from the contents.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
+
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the knowledge base contents. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found in the contexts.**`;
 
 export const reviewPrompt = `This is the report plan after user confirmation:
 <PLAN>
@@ -189,13 +262,11 @@ If you believe no further research is needed, you can output an empty queries.
 ${serpQuerySchemaPrompt}`;
 
 export const finalReportCitationImagePrompt = `Image Rules:
-
 - Images related to the paragraph content at the appropriate location in the article according to the image description.
 - Include images using \`![Image Description](image_url)\` in a separate section.
 - **Do not add any images at the end of the article.**`;
 
 export const finalReportReferencesPrompt = `Citation Rules:
-
 - Please cite research references at the end of your paragraphs when appropriate.
 - If the citation is from the reference, please **ignore**. Include only references from sources.
 - Please use the reference format [number], to reference the learnings link in corresponding parts of your answer.
@@ -203,7 +274,13 @@ export const finalReportReferencesPrompt = `Citation Rules:
 - Do not have more than 3 reference link in a paragraph, and keep only the most relevant ones.
 - **Do not add references at the end of the report.**`;
 
-export const finalReportPrompt = `This is the report plan after user confirmation:
+export const finalReportPrompt = `## TOOL DEFINITION: Write Final Report Tool
+
+**This tool is called AFTER all search tasks are completed and learnings are gathered.**
+
+**This is the FINAL step in the research workflow.**
+
+This is the report plan after user confirmation:
 <PLAN>
 {plan}
 </PLAN>
@@ -228,8 +305,11 @@ Please write according to the user's writing requirements, if any:
 {requirement}
 </REQUIREMENT>
 
-Write a final report based on the report plan using the learnings from research.
-Make it as detailed as possible, aim for 5 pages or more, the more the better, include ALL the learnings from research.
+To answer the user request below, please write out a thorough structured final report based on the report plan using the learnings from research including sources, data figures, quotes.
+
+**CRITICAL: Use ALL the learnings provided above. Do NOT summarize, condense, or omit ANY information from the learnings. All collected information is important and must be included in the final report with full detail. Include all specific data, metrics, numbers, dates, names, and facts from the learnings.**
+
+Length, style and complexity should fit the user request (below). Use headers to structure the report, build tables if fitting to the retrieved information, build bullet point lists if fitting to list like content. Write out argumentation paragraphs - make sure to explain findings and reason the explain it! There is value in the citations, please use them to prove arguments and findings! The report should be fit so a consulting partner will approve this to be sent to a client without further refinement. Place the web sources and links close to statements to give correct citations.
 **Respond only the final report content, and no additional text before or after.**`;
 
 export const rewritingPrompt = `You are tasked with re-writing the following text to markdown. Ensure you do not change the meaning or story behind the text. 

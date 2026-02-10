@@ -5,6 +5,7 @@ import { createSearchProvider } from "./search";
 import {
   getSystemPrompt,
   getOutputGuidelinesPrompt,
+  generateQuestionsPrompt,
   writeReportPlanPrompt,
   generateSerpQueriesPrompt,
   processResultPrompt,
@@ -16,7 +17,7 @@ import {
   parseDeepResearchPromptOverrides,
   type DeepResearchPromptOverrides,
 } from "@/constants/prompts";
-import { isNetworkingModel } from "@/utils/model";
+import { isNetworkingModel, getSafeTemperatureOptions } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { pick, unique, flat, isFunction } from "radash";
 
@@ -118,16 +119,58 @@ class DeepResearch {
       : `**Respond in the same language as the user's language**`;
   }
 
-  async writeReportPlan(query: string): Promise<string> {
-    this.onMessage("progress", { step: "report-plan", status: "start" });
+  async askQuestions(query: string, prompt: string = ""): Promise<string> {
+    this.onMessage("progress", { step: "ask-questions", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
     const result = streamText({
-      model: await this.getThinkingModel(),
-      system: getSystemPrompt(this.promptOverrides),
+      model: thinkingModel,
+      system: getSystemPrompt(),
       prompt: [
-        writeReportPlanPrompt(query, this.promptOverrides),
+        generateQuestionsPrompt(query, prompt),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
+    });
+    let content = "";
+    this.onMessage("message", { type: "text", text: "<questions>\n" });
+    for await (const part of result.fullStream) {
+      if (part.type === "text-delta") {
+        thinkTagStreamProcessor.processChunk(
+          part.textDelta,
+          (data) => {
+            content += data;
+            this.onMessage("message", { type: "text", text: data });
+          },
+          (data) => {
+            this.onMessage("reasoning", { type: "text", text: data });
+          }
+        );
+      } else if (part.type === "reasoning") {
+        this.onMessage("reasoning", { type: "text", text: part.textDelta });
+      }
+    }
+    this.onMessage("message", { type: "text", text: "\n</questions>\n\n" });
+    this.onMessage("progress", {
+      step: "ask-questions",
+      status: "end",
+      data: content,
+    });
+    return content;
+  }
+
+  async writeReportPlan(query: string, prompt :string = ""): Promise<string> {
+    this.onMessage("progress", { step: "report-plan", status: "start" });
+    const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
+    const result = streamText({
+      model: thinkingModel,
+      system: getSystemPrompt(),
+      prompt: [
+        writeReportPlanPrompt(query, prompt),
+        this.getResponseLanguagePrompt(),
+      ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<report-plan>\n" });
@@ -161,6 +204,7 @@ class DeepResearch {
   ): Promise<DeepResearchSearchTask[]> {
     this.onMessage("progress", { step: "serp-query", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const thinkingModel = await this.getThinkingModel();
     const { text } = await generateText({
       model: await this.getThinkingModel(),
       system: getSystemPrompt(this.promptOverrides),
@@ -168,6 +212,7 @@ class DeepResearch {
         generateSerpQueriesPrompt(reportPlan, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     const querySchema = getSERPQuerySchema();
     let content = "";
@@ -264,6 +309,7 @@ class DeepResearch {
             ),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
+           topP: 0.9,
           tools: await getTools(),
           providerOptions: getProviderOptions(),
         });
@@ -296,6 +342,7 @@ class DeepResearch {
             ),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
+           topP: 0.85,
         });
       }
 
@@ -403,7 +450,8 @@ class DeepResearch {
     tasks: DeepResearchSearchResult[],
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = true
+    enableFileFormatResource = true,
+    requirements = ""
   ): Promise<FinalReportResult> {
     this.onMessage("progress", { step: "final-report", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
@@ -457,7 +505,7 @@ class DeepResearch {
             learnings,
             sourceList,
             imageList,
-            "",
+            requirements,
             imageList.length > 0 && enableCitationImage,
             sourceList.length > 0 && enableReferences,
             enableFileFormatResource,
@@ -476,6 +524,7 @@ class DeepResearch {
       });
     }
 
+    const thinkingModel = await this.getThinkingModel();
     const result = streamText({
       model: await this.getThinkingModel(),
       system: [
@@ -488,7 +537,8 @@ class DeepResearch {
           content: messageContent,
         },
       ],
-      temperature: 0.5,
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
+      topP: 0.85,
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<final-report>\n" });
@@ -552,10 +602,11 @@ class DeepResearch {
     query: string,
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = false
+    enableFileFormatResource = false,
+    prompt: string = ""
   ) {
     try {
-      const reportPlan = await this.writeReportPlan(query);
+      const reportPlan = await this.writeReportPlan(query, prompt);
       const tasks = await this.generateSERPQuery(reportPlan);
       const results = await this.runSearchTask(tasks, enableReferences);
       const finalReport = await this.writeFinalReport(
@@ -563,7 +614,8 @@ class DeepResearch {
         results,
         enableCitationImage,
         enableReferences,
-        enableFileFormatResource
+        enableFileFormatResource,
+        prompt
       );
       return finalReport;
     } catch (err) {

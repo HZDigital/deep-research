@@ -35,7 +35,10 @@ import {
   writeFinalReportPrompt,
   getSERPQuerySchema,
 } from "@/utils/deep-research/prompts";
-import { isNetworkingModel } from "@/utils/model";
+import {
+  isNetworkingModel,
+  getSafeTemperatureOptions,
+} from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { parseError } from "@/utils/error";
 import { pick, flat, unique } from "radash";
@@ -217,6 +220,7 @@ function useDeepResearch() {
         generateQuestionsPrompt(question, promptOverrides),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -256,6 +260,7 @@ function useDeepResearch() {
         writeReportPlanPrompt(query, promptOverrides),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -300,6 +305,7 @@ function useDeepResearch() {
     }
 
     const { networkingModel } = getModel();
+    const modelProvider = await createModelProvider(networkingModel);
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const searchResult = streamText({
       model: await createModelProvider(networkingModel),
@@ -313,6 +319,7 @@ function useDeepResearch() {
         ),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(networkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -408,6 +415,7 @@ function useDeepResearch() {
               }
               const enableReferences =
                 sources.length > 0 && references === "enable";
+              const modelProvider = await createModelProvider(networkingModel);
               searchResult = streamText({
                 model: await createModelProvider(networkingModel),
                 system: getSystemPrompt(promptOverrides),
@@ -421,6 +429,7 @@ function useDeepResearch() {
                   ),
                   getResponseLanguagePrompt(),
                 ].join("\n\n"),
+                ...getSafeTemperatureOptions(networkingModel),
                 experimental_transform: smoothTextStream(smoothTextStreamType),
                 onError: handleError,
               });
@@ -439,11 +448,13 @@ function useDeepResearch() {
                   ),
                   getResponseLanguagePrompt(),
                 ].join("\n\n"),
+                ...getSafeTemperatureOptions(networkingModel),
                 experimental_transform: smoothTextStream(smoothTextStreamType),
                 onError: handleError,
               });
             }
           } else {
+            const modelProvider = await createModelProvider(networkingModel);
             searchResult = streamText({
               model: await createModelProvider(networkingModel),
               system: getSystemPrompt(promptOverrides),
@@ -455,6 +466,7 @@ function useDeepResearch() {
                 ),
                 getResponseLanguagePrompt(),
               ].join("\n\n"),
+              ...getSafeTemperatureOptions(networkingModel),
               experimental_transform: smoothTextStream(smoothTextStreamType),
               onError: (err) => {
                 taskStore.updateTask(item.query, { state: "failed" });
@@ -548,6 +560,7 @@ function useDeepResearch() {
     setStatus(t("research.common.research"));
     const learnings = tasks.map((item) => item.learning);
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
       model: await createModelProvider(thinkingModel),
       system: getSystemPrompt(promptOverrides),
@@ -560,6 +573,7 @@ function useDeepResearch() {
         ),
         getResponseLanguagePrompt(),
       ].join("\n\n"),
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -708,6 +722,7 @@ function useDeepResearch() {
       });
     }
 
+    const thinkingModelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
       model: await createModelProvider(thinkingModel),
       system: [
@@ -720,7 +735,7 @@ function useDeepResearch() {
           content: messageContent,
         },
       ],
-      temperature: 0.5,
+      ...getSafeTemperatureOptions(thinkingModel),
       experimental_transform: smoothTextStream(smoothTextStreamType),
       onError: handleError,
     });
@@ -779,6 +794,7 @@ function useDeepResearch() {
     setStatus(t("research.common.thinking"));
     try {
       const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
+      const modelProvider = await createModelProvider(thinkingModel);
       const result = streamText({
         model: await createModelProvider(thinkingModel),
         system: getSystemPrompt(promptOverrides),
@@ -786,6 +802,7 @@ function useDeepResearch() {
           generateSerpQueriesPrompt(reportPlan, promptOverrides),
           getResponseLanguagePrompt(),
         ].join("\n\n"),
+        ...getSafeTemperatureOptions(thinkingModel),
         experimental_transform: smoothTextStream(smoothTextStreamType),
         onError: handleError,
       });

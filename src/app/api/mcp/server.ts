@@ -57,6 +57,8 @@ function initDeepResearchServer({
 export function initMcpServer() {
   const deepResearchToolDescription =
     "Start deep research on any question, obtain and organize information through search engines, and generate research report.";
+  const askQuestionDescription =
+    "Generate follow-up questions to clarify the research direction based on user query.";
   const writeResearchPlanDescription =
     "Generate research plan based on user query.";
   const generateSERPQueryDescription =
@@ -76,6 +78,9 @@ export function initMcpServer() {
         tools: {
           "deep-research": {
             description: deepResearchToolDescription,
+          },
+          "ask-question": {
+            description: askQuestionDescription,
           },
           "write-research-plan": {
             description: writeResearchPlanDescription,
@@ -120,8 +125,10 @@ export function initMcpServer() {
         .default(true)
         .optional()
         .describe(
-          "Whether to include citation links in search results and final reports."
-        ),
+          "Whether to include citation links in search results and final reports."),
+      prompt: z
+        .string()
+        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Deep Research",
@@ -130,7 +137,7 @@ export function initMcpServer() {
       openWorldHint: true, // Uses external search and AI APIs
     },
     async (
-      { query, language, maxResult, enableCitationImage, enableReferences },
+      { query, language, maxResult, enableCitationImage, enableReferences, prompt  },
       { signal }
     ) => {
       signal.addEventListener("abort", () => {
@@ -145,10 +152,49 @@ export function initMcpServer() {
         const result = await deepResearch.start(
           query,
           enableCitationImage,
-          enableReferences
+          enableReferences,
+          false,
+          prompt
         );
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Error: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "ask-question",
+    askQuestionDescription,
+    {
+      query: z.string().describe("The topic to generate questions for."),
+      language: z.string().optional().describe("The response Language."),
+      prompt: z
+        .string()
+        .describe("Custom Prompt with instructions and information."),
+    },
+    async ({ query, language, prompt }, { signal }) => {
+      signal.addEventListener("abort", () => {
+        throw new Error("The client closed unexpectedly!");
+      });
+
+      try {
+        const deepResearch = initDeepResearchServer({ language });
+        const result = await deepResearch.askQuestions(query, prompt);
+        return {
+          content: [{ type: "text", text: result }],
         };
       } catch (error) {
         return {
@@ -172,6 +218,9 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic for deep research."),
       language: z.string().optional().describe("The response Language."),
+      prompt: z
+        .string()
+        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Write Research Plan",
@@ -179,18 +228,16 @@ export function initMcpServer() {
       destructiveHint: false,
       openWorldHint: true, // Uses external AI API
     },
-    async ({ query, language }, { signal }) => {
+    async ({ query, language, prompt }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
 
       try {
         const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.writeReportPlan(query);
+        const result = await deepResearch.writeReportPlan(query, prompt);
         return {
-          content: [
-            { type: "text", text: JSON.stringify({ reportPlan: result }) },
-          ],
+          content: [{ type: "text", text: result }],
         };
       } catch (error) {
         return {
@@ -358,6 +405,7 @@ export function initMcpServer() {
         .describe(
           "The data information collected during the execution of the query task."
         ),
+      requirements: z.string().optional().describe("Specific constraints, preferences, or instructions for the final report."),
       language: z
         .string()
         .optional()
@@ -396,6 +444,7 @@ export function initMcpServer() {
         maxResult,
         enableCitationImage = true,
         enableReferences = true,
+        requirements,
       },
       { signal }
     ) => {
@@ -409,7 +458,9 @@ export function initMcpServer() {
           plan,
           tasks,
           enableCitationImage,
-          enableReferences
+          enableReferences,
+          true,
+          requirements
         );
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],

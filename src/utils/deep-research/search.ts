@@ -175,6 +175,67 @@ type BreaveImage = {
   confidence: string;
 };
 
+// Helper function for retrying fetch with timeout
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3,
+  timeout: number = 50000
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    try {
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check if response is ok, if not throw error to trigger retry
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response;
+    } catch (error) {
+      // Clear timeout on error
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorName = error instanceof Error ? error.name : '';
+      
+      // Handle abort/timeout errors specifically
+      if (errorName === 'AbortError' || errorMessage.includes('aborted')) {
+        console.warn(`Attempt ${attempt}/${maxRetries} timed out after ${timeout}ms`);
+        lastError = new Error(`Request timed out after ${timeout}ms`);
+      } else {
+        console.warn(`Attempt ${attempt}/${maxRetries} failed:`, errorMessage);
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+      
+      // If this is the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Wait before retrying (exponential backoff)
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError || new Error('Maximum retry attempts exceeded');
+}
+
 export async function createSearchProvider({
   provider,
   baseURL,
@@ -191,7 +252,8 @@ export async function createSearchProvider({
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
   if (provider === "tavily") {
-    const response = await fetch(
+    try {
+    const response = await fetchWithRetry(
       `${completePath(baseURL || TAVILY_BASE_URL)}/search`,
       {
         method: "POST",
@@ -202,8 +264,8 @@ export async function createSearchProvider({
           search_depth: "advanced",
           topic: scope || "general",
           max_results: Number(maxResult),
-          include_images: true,
-          include_image_descriptions: true,
+          include_images: false, //true NUNO,
+          include_image_descriptions: false, //true NUNO,
           include_answer: false,
           include_raw_content: "markdown",
         }),
@@ -222,6 +284,13 @@ export async function createSearchProvider({
         }) as Source[],
       images: images as ImageSource[],
     };
+  }   catch (error) {
+      console.error('Error fetching or parsing Tavily response:', error);
+      return {
+        sources: [],
+        images: [],
+      };
+    }
   } else if (provider === "firecrawl") {
     const response = await fetch(
       `${completePath(baseURL || FIRECRAWL_BASE_URL, "/v1")}/search`,
@@ -395,7 +464,7 @@ export async function createSearchProvider({
     const params = {
       q: query,
       categories:
-        scope === "academic" ? ["science", "images"] : ["general", "images"],
+        scope === "academic" ? ["science",] : ["general", ], //NUNO removed "images"
       engines:
         scope === "academic"
           ? [
@@ -403,35 +472,47 @@ export async function createSearchProvider({
               "google scholar",
               "pubmed",
               "wikispecies",
-              "google_images",
+              //"google_images", //NUNO
             ]
           : [
               "google",
-              "bing",
-              "duckduckgo",
-              "brave",
+              //"bing", //NUNO
+             // "duckduckgo", //NUNO
+             // "brave", //NUNO
               "wikipedia",
-              "bing_images",
-              "google_images",
+              //"bing_images", //NUNO
+              //"google_images",//NUNO
             ],
       lang: "auto",
       format: "json",
-      autocomplete: "google",
     };
     const searchQuery = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
       searchQuery.append(key, value.toString());
     }
     const local = global.location || {};
-    const response = await fetch(
+    
+    let results = [];
+    try {
+    // Use retry mechanism for searxng
+    const response = await fetchWithRetry(
       `${completePath(
         baseURL || SEARXNG_BASE_URL,
       )}/search?${searchQuery.toString()}`,
       baseURL?.startsWith(local.origin)
         ? { method: "POST", credentials: "omit", headers }
         : { method: "GET", credentials: "omit" },
+      5, // maxRetries
+      10000 // timeout in ms
     );
-    const { results = [] } = await response.json();
+    
+      const data = await response.json();
+      results = data.results || [];
+    } catch (error) {
+      console.warn('Failed to parse searxng response JSON:', error);
+      results = [];
+    }
+
     const rearrangedResults = sort(
       results as SearxngSearchResult[],
       (item) => item.score,
