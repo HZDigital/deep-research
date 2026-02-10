@@ -577,11 +577,37 @@ class DeepResearch {
     this.onMessage("message", { type: "text", text: "\n</final-report>\n\n" });
     thinkTagStreamProcessor.end();
 
-    const title = content
-      .split("\n")[0]
-      .replaceAll("#", "")
-      .replaceAll("*", "")
-      .trim();
+    // Extract title: find first line starting with # (h1 markdown), skip empty lines and metadata
+    let title = "Research Report";
+    const lines = content.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Look for h1 heading (starts with single #)
+      if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
+        title = trimmed.replace(/^#\s+/, "").replaceAll("*", "").trim();
+        break;
+      }
+      // Skip empty lines, metadata lines, and common non-title content
+      if (
+        trimmed &&
+        !trimmed.startsWith("#") &&
+        !trimmed.includes(":") &&
+        !trimmed.match(/^(Title|Final Report|Learnings|Sources|Formatting|Guidelines)/)
+      ) {
+        // If we find a regular paragraph line before a title, use it cautiously
+        break;
+      }
+    }
+    if (!title || title === "Research Report") {
+      // Fallback: extract first non-empty, non-metadata line
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith("#") && !trimmed.includes(":")) {
+          title = trimmed.replace(/\*\*/g, "").substring(0, 100);
+          break;
+        }
+      }
+    }
 
     const finalReportResult: FinalReportResult = {
       title,

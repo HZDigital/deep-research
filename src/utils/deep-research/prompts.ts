@@ -165,10 +165,11 @@ export function writeFinalReportPrompt(
   const imageList = images.map(
     (source, idx) => `${idx + 1}. ![${source.description}](${source.url})`
   );
+  
   return (
     finalReportPrompt +
     (enableCitationImage
-      ? `\n**Including meaningful images from the previous research in the report is very helpful.**\n\n${finalReportCitationImagePrompt}`
+      ? `\n\n${finalReportCitationImagePrompt}`
       : "") +
     (enableReferences ? `\n\n${finalReportReferencesPrompt}` : "")
   )
