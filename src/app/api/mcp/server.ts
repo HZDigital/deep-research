@@ -17,12 +17,15 @@ const TASK_MODEL = process.env.MCP_TASK_MODEL || "";
 function initDeepResearchServer({
   language,
   maxResult,
+  promptOverrides,
 }: {
   language?: string;
   maxResult?: number;
+  promptOverrides?: string;
 }) {
   const deepResearch = new DeepResearch({
     language,
+    promptOverrides,
     AIProvider: {
       baseURL: getAIProviderBaseURL(AI_PROVIDER),
       apiKey: multiApiKeyPolling(getAIProviderApiKey(AI_PROVIDER)),
@@ -148,13 +151,13 @@ export function initMcpServer() {
         const deepResearch = initDeepResearchServer({
           language,
           maxResult,
+          promptOverrides: prompt,
         });
         const result = await deepResearch.start(
           query,
           enableCitationImage,
           enableReferences,
-          false,
-          prompt
+          false
         );
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
@@ -191,8 +194,11 @@ export function initMcpServer() {
       });
 
       try {
-        const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.askQuestions(query, prompt);
+        const deepResearch = initDeepResearchServer({
+          language,
+          promptOverrides: prompt,
+        });
+        const result = await deepResearch.askQuestions(query);
         return {
           content: [{ type: "text", text: result }],
         };
@@ -234,8 +240,11 @@ export function initMcpServer() {
       });
 
       try {
-        const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.writeReportPlan(query, prompt);
+        const deepResearch = initDeepResearchServer({
+          language,
+          promptOverrides: prompt,
+        });
+        const result = await deepResearch.writeReportPlan(query);
         return {
           content: [{ type: "text", text: result }],
         };

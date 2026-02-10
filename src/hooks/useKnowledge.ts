@@ -5,7 +5,10 @@ import useModelProvider from "@/hooks/useAiProvider";
 import { useKnowledgeStore } from "@/store/knowledge";
 import { useTaskStore } from "@/store/task";
 import { useSettingStore } from "@/store/setting";
-import { rewritingPrompt } from "@/constants/prompts";
+import {
+  parseDeepResearchPromptOverrides,
+  resolveDeepResearchPromptTemplates,
+} from "@/constants/prompts";
 import { jinaReader, localCrawler } from "@/utils/crawler";
 import { fileParser } from "@/utils/parser";
 import { getTextByteSize } from "@/utils/file";
@@ -36,6 +39,18 @@ function useKnowledge() {
   const { smoothTextStreamType } = useSettingStore();
   const { createModelProvider, getModel } = useModelProvider();
   const knowledgeStore = useKnowledgeStore();
+
+  function getRewritingPrompt() {
+    try {
+      const { deepResearchPromptOverrides } = useSettingStore.getState();
+      const promptOverrides = parseDeepResearchPromptOverrides(
+        deepResearchPromptOverrides
+      );
+      return resolveDeepResearchPromptTemplates(promptOverrides).rewritingPrompt;
+    } catch {
+      return resolveDeepResearchPromptTemplates().rewritingPrompt;
+    }
+  }
 
   function generateId(
     type: "file" | "url" | "knowledge",
@@ -84,7 +99,7 @@ function useKnowledge() {
       const result = streamText({
         model: modelProvider,
         prompt: text,
-        system: rewritingPrompt,
+        system: getRewritingPrompt(),
         ...getSafeTemperatureOptions(networkingModel),
         onFinish: () => {
           const currentTime = Date.now();
@@ -272,7 +287,7 @@ function useKnowledge() {
           const stream = streamText({
             model: modelProvider,
             prompt: result.content,
-            system: rewritingPrompt,
+            system: getRewritingPrompt(),
             ...getSafeTemperatureOptions(networkingModel),
             onFinish: () => {
               const currentTime = Date.now();
