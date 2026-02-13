@@ -629,6 +629,7 @@ function useDeepResearch() {
       reportLength,
     } = useSettingStore.getState();
     const {
+      query,
       reportPlan,
       tasks,
       setId,
@@ -699,6 +700,7 @@ function useDeepResearch() {
         type: "text",
         text: [
           writeFinalReportPrompt(
+            query,
             reportPlan,
             learnings,
             sourceList,
@@ -788,7 +790,7 @@ function useDeepResearch() {
   }
 
   async function deepResearch() {
-    const { reportPlan } = useTaskStore.getState();
+    const { query, reportPlan } = useTaskStore.getState();
     const { thinkingModel } = getModel();
     const promptOverrides = getPromptOverrides();
     setStatus(t("research.common.thinking"));
@@ -799,7 +801,7 @@ function useDeepResearch() {
         model: modelProvider,
         system: getSystemPrompt(promptOverrides),
         prompt: [
-          generateSerpQueriesPrompt(reportPlan, promptOverrides),
+          generateSerpQueriesPrompt(query, reportPlan, promptOverrides),
           getResponseLanguagePrompt(),
         ].join("\n\n"),
         ...getSafeTemperatureOptions(thinkingModel),

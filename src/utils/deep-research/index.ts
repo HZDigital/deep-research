@@ -200,6 +200,7 @@ class DeepResearch {
   }
 
   async generateSERPQuery(
+    query: string,
     reportPlan: string
   ): Promise<DeepResearchSearchTask[]> {
     this.onMessage("progress", { step: "serp-query", status: "start" });
@@ -209,7 +210,7 @@ class DeepResearch {
       model: await this.getThinkingModel(),
       system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        generateSerpQueriesPrompt(reportPlan, this.promptOverrides),
+        generateSerpQueriesPrompt(query, reportPlan, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
       ...getSafeTemperatureOptions(thinkingModel.modelId),
@@ -446,6 +447,7 @@ class DeepResearch {
   }
 
   async writeFinalReport(
+    query: string,
     reportPlan: string,
     tasks: DeepResearchSearchResult[],
     enableCitationImage = true,
@@ -501,6 +503,7 @@ class DeepResearch {
         type: "text",
         text: [
           writeFinalReportPrompt(
+            query,
             reportPlan,
             learnings,
             sourceList,
@@ -632,9 +635,10 @@ class DeepResearch {
   ) {
     try {
       const reportPlan = await this.writeReportPlan(query);
-      const tasks = await this.generateSERPQuery(reportPlan);
+      const tasks = await this.generateSERPQuery(query, reportPlan);
       const results = await this.runSearchTask(tasks, enableReferences);
       const finalReport = await this.writeFinalReport(
+        query,
         reportPlan,
         results,
         enableCitationImage,

@@ -60,11 +60,13 @@ export function writeReportPlanPrompt(
 }
 
 export function generateSerpQueriesPrompt(
+  query: string,
   plan: string,
   promptOverrides?: DeepResearchPromptOverrides
 ) {
   const { serpQueriesPrompt } = getPromptTemplates(promptOverrides);
   return serpQueriesPrompt
+    .replace("{query}", query)
     .replace("{plan}", plan)
     .replace("{outputSchema}", getSERPQueryOutputSchema());
 }
@@ -140,6 +142,7 @@ export function reviewSerpQueriesPrompt(
 }
 
 export function writeFinalReportPrompt(
+  query: string,
   plan: string,
   learning: string[],
   source: Source[],
@@ -165,7 +168,7 @@ export function writeFinalReportPrompt(
   const imageList = images.map(
     (source, idx) => `${idx + 1}. ![${source.description}](${source.url})`
   );
-  
+
   return (
     finalReportPrompt +
     (enableCitationImage
@@ -173,6 +176,7 @@ export function writeFinalReportPrompt(
       : "") +
     (enableReferences ? `\n\n${finalReportReferencesPrompt}` : "")
   )
+    .replace("{query}", query)
     .replace("{plan}", plan)
     .replace(
       "{learnings}",

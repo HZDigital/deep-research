@@ -153,12 +153,19 @@ export const serpQueriesPrompt = `## TOOL DEFINITION: Generate SERP Queries Tool
 
 After this tool completes, the next tool to call is the "Search Task" tool for each generated query.
 
+This is the user's original research query:
+<ORIGINAL_QUERY>
+{query}
+</ORIGINAL_QUERY>
+
 This is the report plan after user confirmation:
 <PLAN>
 {plan}
 </PLAN>
 
-Based on previous report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other. Provide a max of 10 queries.
+Based on the report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other. Provide a max of 10 queries.
+
+**CRITICAL: All queries MUST remain focused on the user's ORIGINAL QUERY above. The report plan provides structure, but the original query defines the subject. Do not drift away from the original research subject.**
 
 **IMPORTANT: Do NOT summarize any information in your response. Return all queries with complete research goals as all details are critical for the final report.**
 
@@ -283,6 +290,12 @@ export const finalReportPrompt = `## TOOL DEFINITION: Write Final Report Tool
 **This tool is called AFTER all search tasks are completed and learnings are gathered.**
 
 **This is the FINAL step in the research workflow.**
+
+**CRITICAL — ORIGINAL USER QUERY:**
+<ORIGINAL_QUERY>
+{query}
+</ORIGINAL_QUERY>
+The report MUST directly answer and stay focused on the original query above. All content should be relevant to this specific research request. Do NOT let the volume of tangential information in the learnings cause you to drift away from the user's original research subject.
 
 This is the report plan after user confirmation:
 <PLAN>
