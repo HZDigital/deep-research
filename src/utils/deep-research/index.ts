@@ -4,6 +4,7 @@ import { createAIProvider } from "./provider";
 import { createSearchProvider } from "./search";
 import {
   getSystemPrompt,
+  getOutputGuidelinesPrompt,
   generateQuestionsPrompt,
   writeReportPlanPrompt,
   generateSerpQueriesPrompt,
@@ -12,8 +13,11 @@ import {
   writeFinalReportPrompt,
   getSERPQuerySchema,
 } from "./prompts";
-import { outputGuidelinesPrompt } from "@/constants/prompts";
-import { isNetworkingModel, isThinkingModel } from "@/utils/model";
+import {
+  parseDeepResearchPromptOverrides,
+  type DeepResearchPromptOverrides,
+} from "@/constants/prompts";
+import { isNetworkingModel, getSafeTemperatureOptions } from "@/utils/model";
 import { ThinkTagStreamProcessor, removeJsonMarkdown } from "@/utils/text";
 import { pick, unique, flat, isFunction } from "radash";
 
@@ -32,6 +36,7 @@ export interface DeepResearchOptions {
     maxResult?: number;
   };
   language?: string;
+  promptOverrides?: DeepResearchPromptOverrides | string;
   onMessage?: (event: string, data: any) => void;
 }
 
@@ -71,9 +76,13 @@ function addQuoteBeforeAllLine(text: string = "") {
 
 class DeepResearch {
   protected options: DeepResearchOptions;
+  promptOverrides: DeepResearchPromptOverrides = {};
   onMessage: (event: string, data: any) => void = () => {};
   constructor(options: DeepResearchOptions) {
     this.options = options;
+    this.promptOverrides = parseDeepResearchPromptOverrides(
+      options.promptOverrides
+    );
     if (isFunction(options.onMessage)) {
       this.onMessage = options.onMessage;
     }
@@ -110,19 +119,18 @@ class DeepResearch {
       : `**Respond in the same language as the user's language**`;
   }
 
-  async askQuestions(query: string, prompt: string = ""): Promise<string> {
+  async askQuestions(query: string): Promise<string> {
     this.onMessage("progress", { step: "ask-questions", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const thinkingModel = await this.getThinkingModel();
     const result = streamText({
       model: thinkingModel,
-      system: getSystemPrompt(),
+      system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        generateQuestionsPrompt(query, prompt),
+        generateQuestionsPrompt(query, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<questions>\n" });
@@ -151,19 +159,18 @@ class DeepResearch {
     return content;
   }
 
-  async writeReportPlan(query: string, prompt :string = ""): Promise<string> {
+  async writeReportPlan(query: string): Promise<string> {
     this.onMessage("progress", { step: "report-plan", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const thinkingModel = await this.getThinkingModel();
     const result = streamText({
       model: thinkingModel,
-      system: getSystemPrompt(),
+      system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        writeReportPlanPrompt(query, prompt),
+        writeReportPlanPrompt(query, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     let content = "";
     this.onMessage("message", { type: "text", text: "<report-plan>\n" });
@@ -193,20 +200,20 @@ class DeepResearch {
   }
 
   async generateSERPQuery(
+    query: string,
     reportPlan: string
   ): Promise<DeepResearchSearchTask[]> {
     this.onMessage("progress", { step: "serp-query", status: "start" });
     const thinkTagStreamProcessor = new ThinkTagStreamProcessor();
     const thinkingModel = await this.getThinkingModel();
     const { text } = await generateText({
-      model: thinkingModel,
-      system: getSystemPrompt(),
+      model: await this.getThinkingModel(),
+      system: getSystemPrompt(this.promptOverrides),
       prompt: [
-        generateSerpQueriesPrompt(reportPlan),
+        generateSerpQueriesPrompt(query, reportPlan, this.promptOverrides),
         this.getResponseLanguagePrompt(),
       ].join("\n\n"),
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
     });
     const querySchema = getSERPQuerySchema();
     let content = "";
@@ -294,9 +301,13 @@ class DeepResearch {
 
         searchResult = streamText({
           model: await this.getTaskModel(),
-          system: getSystemPrompt(),
+          system: getSystemPrompt(this.promptOverrides),
           prompt: [
-            processResultPrompt(item.query, item.researchGoal),
+            processResultPrompt(
+              item.query,
+              item.researchGoal,
+              this.promptOverrides
+            ),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
            topP: 0.9,
@@ -307,6 +318,7 @@ class DeepResearch {
         try {
           const result = await createSearchProvider({
             query: item.query,
+            promptOverrides: this.promptOverrides,
             ...this.options.searchProvider,
           });
 
@@ -320,13 +332,14 @@ class DeepResearch {
         }
         searchResult = streamText({
           model: await this.getTaskModel(),
-          system: getSystemPrompt(),
+          system: getSystemPrompt(this.promptOverrides),
           prompt: [
             processSearchResultPrompt(
               item.query,
               item.researchGoal,
               sources,
-              sources.length > 0 && enableReferences
+              sources.length > 0 && enableReferences,
+              this.promptOverrides
             ),
             this.getResponseLanguagePrompt(),
           ].join("\n\n"),
@@ -434,6 +447,7 @@ class DeepResearch {
   }
 
   async writeFinalReport(
+    query: string,
     reportPlan: string,
     tasks: DeepResearchSearchResult[],
     enableCitationImage = true,
@@ -489,6 +503,7 @@ class DeepResearch {
         type: "text",
         text: [
           writeFinalReportPrompt(
+            query,
             reportPlan,
             learnings,
             sourceList,
@@ -496,7 +511,8 @@ class DeepResearch {
             requirements,
             imageList.length > 0 && enableCitationImage,
             sourceList.length > 0 && enableReferences,
-            enableFileFormatResource
+            enableFileFormatResource,
+            this.promptOverrides
           ),
           this.getResponseLanguagePrompt(),
         ].join("\n\n"),
@@ -513,16 +529,18 @@ class DeepResearch {
 
     const thinkingModel = await this.getThinkingModel();
     const result = streamText({
-      model: thinkingModel,
-      system: [getSystemPrompt(), outputGuidelinesPrompt].join("\n\n"),
+      model: await this.getThinkingModel(),
+      system: [
+        getSystemPrompt(this.promptOverrides),
+        getOutputGuidelinesPrompt(this.promptOverrides),
+      ].join("\n\n"),
       messages: [
         {
           role: "user",
           content: messageContent,
         },
       ],
-      // Don't include temperature for thinking models as they don't support it
-      ...(isThinkingModel(thinkingModel.modelId) ? {} : { temperature: 1 }),
+      ...getSafeTemperatureOptions(thinkingModel.modelId),
       topP: 0.85,
     });
     let content = "";
@@ -562,11 +580,37 @@ class DeepResearch {
     this.onMessage("message", { type: "text", text: "\n</final-report>\n\n" });
     thinkTagStreamProcessor.end();
 
-    const title = content
-      .split("\n")[0]
-      .replaceAll("#", "")
-      .replaceAll("*", "")
-      .trim();
+    // Extract title: find first line starting with # (h1 markdown), skip empty lines and metadata
+    let title = "Research Report";
+    const lines = content.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Look for h1 heading (starts with single #)
+      if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
+        title = trimmed.replace(/^#\s+/, "").replaceAll("*", "").trim();
+        break;
+      }
+      // Skip empty lines, metadata lines, and common non-title content
+      if (
+        trimmed &&
+        !trimmed.startsWith("#") &&
+        !trimmed.includes(":") &&
+        !trimmed.match(/^(Title|Final Report|Learnings|Sources|Formatting|Guidelines)/)
+      ) {
+        // If we find a regular paragraph line before a title, use it cautiously
+        break;
+      }
+    }
+    if (!title || title === "Research Report") {
+      // Fallback: extract first non-empty, non-metadata line
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith("#") && !trimmed.includes(":")) {
+          title = trimmed.replace(/\*\*/g, "").substring(0, 100);
+          break;
+        }
+      }
+    }
 
     const finalReportResult: FinalReportResult = {
       title,
@@ -587,20 +631,19 @@ class DeepResearch {
     query: string,
     enableCitationImage = true,
     enableReferences = true,
-    enableFileFormatResource = false,
-    prompt: string = ""
+    enableFileFormatResource = false
   ) {
     try {
-      const reportPlan = await this.writeReportPlan(query, prompt);
-      const tasks = await this.generateSERPQuery(reportPlan);
+      const reportPlan = await this.writeReportPlan(query);
+      const tasks = await this.generateSERPQuery(query, reportPlan);
       const results = await this.runSearchTask(tasks, enableReferences);
       const finalReport = await this.writeFinalReport(
+        query,
         reportPlan,
         results,
         enableCitationImage,
         enableReferences,
-        enableFileFormatResource,
-        prompt
+        enableFileFormatResource
       );
       return finalReport;
     } catch (err) {

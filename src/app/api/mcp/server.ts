@@ -17,12 +17,15 @@ const TASK_MODEL = process.env.MCP_TASK_MODEL || "";
 function initDeepResearchServer({
   language,
   maxResult,
+  promptOverrides,
 }: {
   language?: string;
   maxResult?: number;
+  promptOverrides?: string;
 }) {
   const deepResearch = new DeepResearch({
     language,
+    promptOverrides,
     AIProvider: {
       baseURL: getAIProviderBaseURL(AI_PROVIDER),
       apiKey: multiApiKeyPolling(getAIProviderApiKey(AI_PROVIDER)),
@@ -126,9 +129,6 @@ export function initMcpServer() {
         .optional()
         .describe(
           "Whether to include citation links in search results and final reports."),
-      prompt: z
-        .string()
-        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Deep Research",
@@ -137,7 +137,7 @@ export function initMcpServer() {
       openWorldHint: true, // Uses external search and AI APIs
     },
     async (
-      { query, language, maxResult, enableCitationImage, enableReferences, prompt  },
+      { query, language, maxResult, enableCitationImage, enableReferences },
       { signal }
     ) => {
       signal.addEventListener("abort", () => {
@@ -153,8 +153,7 @@ export function initMcpServer() {
           query,
           enableCitationImage,
           enableReferences,
-          false,
-          prompt
+          false
         );
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
@@ -181,18 +180,17 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic to generate questions for."),
       language: z.string().optional().describe("The response Language."),
-      prompt: z
-        .string()
-        .describe("Custom Prompt with instructions and information."),
     },
-    async ({ query, language, prompt }, { signal }) => {
+    async ({ query, language }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
 
       try {
-        const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.askQuestions(query, prompt);
+        const deepResearch = initDeepResearchServer({
+          language,
+        });
+        const result = await deepResearch.askQuestions(query);
         return {
           content: [{ type: "text", text: result }],
         };
@@ -218,9 +216,6 @@ export function initMcpServer() {
     {
       query: z.string().describe("The topic for deep research."),
       language: z.string().optional().describe("The response Language."),
-      prompt: z
-        .string()
-        .describe("Custom Prompt with instructions and information."),
     },
     {
       title: "Write Research Plan",
@@ -228,14 +223,16 @@ export function initMcpServer() {
       destructiveHint: false,
       openWorldHint: true, // Uses external AI API
     },
-    async ({ query, language, prompt }, { signal }) => {
+    async ({ query, language }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
 
       try {
-        const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.writeReportPlan(query, prompt);
+        const deepResearch = initDeepResearchServer({
+          language,
+        });
+        const result = await deepResearch.writeReportPlan(query);
         return {
           content: [{ type: "text", text: result }],
         };
@@ -259,6 +256,7 @@ export function initMcpServer() {
     "generate-SERP-query",
     generateSERPQueryDescription,
     {
+      query: z.string().describe("The user's original research query."),
       plan: z.string().describe("Research plan for deep research."),
       language: z.string().optional().describe("The response Language."),
     },
@@ -268,14 +266,14 @@ export function initMcpServer() {
       destructiveHint: false,
       openWorldHint: true, // Uses external AI API
     },
-    async ({ plan, language }, { signal }) => {
+    async ({ query, plan, language }, { signal }) => {
       signal.addEventListener("abort", () => {
         throw new Error("The client closed unexpectedly!");
       });
 
       try {
         const deepResearch = initDeepResearchServer({ language });
-        const result = await deepResearch.generateSERPQuery(plan);
+        const result = await deepResearch.generateSERPQuery(query, plan);
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
         };
@@ -364,6 +362,7 @@ export function initMcpServer() {
     "write-final-report",
     writeFinalReportDescription,
     {
+      query: z.string().describe("The user's original research query."),
       plan: z.string().describe("Research plan for deep research."),
       tasks: z
         .array(
@@ -438,6 +437,7 @@ export function initMcpServer() {
     },
     async (
       {
+        query,
         plan,
         tasks,
         language,
@@ -455,6 +455,7 @@ export function initMcpServer() {
       try {
         const deepResearch = initDeepResearchServer({ language, maxResult });
         const result = await deepResearch.writeFinalReport(
+          query,
           plan,
           tasks,
           enableCitationImage,

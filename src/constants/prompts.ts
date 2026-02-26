@@ -68,17 +68,25 @@ Follow these rules to organize your output:
 7. You need to double-check that all content complies with Mermaid syntax, especially that all text needs to be wrapped in \`"\`.
 </OutputGuidelines>`;
 
-export const systemQuestionPrompt = `Given the following query from the user, ask 3-5 to the point follow-up questions to clarify ambiguity and specify the research direction:
+export const systemQuestionPrompt = `## TOOL DEFINITION: Ask Questions Tool
+
+**CRITICAL: This is the FIRST tool that must be called in the research workflow.**
+
+After this tool completes, the next tool to call is the "Write Report Plan" tool.
+
+Given the following query from the user, ask 3-5 to the point follow-up questions to clarify ambiguity and specify the research direction:
 
 <QUERY>
 {query}
 </QUERY>
 
-Take into account the following additional instructions and anwsers when generating questions:
+Take into account the following additional instructions and answers when generating questions:
 
 <PROMPT>
 {prompt}
 </PROMPT>
+
+**IMPORTANT: Do NOT summarize any information in your response. Return all questions in full detail as all information is critical for the final report.**
 
 Questions need to be brief and concise. No need to output content that is irrelevant to the question.`;
 
@@ -90,7 +98,13 @@ export const guidelinesPrompt = `Integration guidelines:
 - Avoid tangential or loosely related sections that don't directly address the core topic.
 </GUIDELINES>`;
 
-export const reportPlanPrompt = `Given the following query from the user:
+export const reportPlanPrompt = `## TOOL DEFINITION: Write Report Plan Tool
+
+**This tool should be called AFTER the "Ask Questions" tool has completed.**
+
+After this tool completes, the next tool to call is the "Generate SERP Queries" tool.
+
+Given the following query from the user:
 <QUERY>
 {query}
 </QUERY>
@@ -101,7 +115,16 @@ And additional instructions:
 </PROMPT>
 
 Generate a list of sections for the report based on the topic and feedback. When asked to search many entities like suppliers or people, consider clustering categories or search approaches.
-Your plan should be tight and focused with NO overlapping sections or unnecessary filler. Each section needs a sentence summarizing its content.
+
+**CRITICAL INSTRUCTIONS:**
+- This plan will be used to structure the research, NOT as content to include in the output
+- Do NOT echo back user-provided formatting guidelines, instructions, or metadata
+- Do NOT include sections like "Formatting and Style Guidelines", "Title", "Report Purpose", etc in the plan
+- Extract the SUBSTANCE of what the user wants researched and organize it into logical sections
+- Each section needs a sentence summarizing its content and what research goals it contains
+- Your plan should be tight and focused with NO overlapping sections or unnecessary filler
+
+**IMPORTANT: Do NOT summarize any information in your response. Return the complete report plan with all sections and details in full as all information is critical for the final report.**
 
 ${guidelinesPrompt}
 
@@ -124,16 +147,35 @@ Expected output:
 ]
 \`\`\``;
 
-export const serpQueriesPrompt = `This is the report plan after user confirmation:
+export const serpQueriesPrompt = `## TOOL DEFINITION: Generate SERP Queries Tool
+
+**This tool should be called AFTER the "Write Report Plan" tool has completed.**
+
+After this tool completes, the next tool to call is the "Search Task" tool for each generated query.
+
+This is the user's original research query:
+<ORIGINAL_QUERY>
+{query}
+</ORIGINAL_QUERY>
+
+This is the report plan after user confirmation:
 <PLAN>
 {plan}
 </PLAN>
 
-Based on previous report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other. Provide a max of 10 queries.
+Based on the report plan, generate a list of SERP queries to further research the topic. Make sure each query is unique and not similar to each other. Provide a max of 10 queries.
+
+**CRITICAL: All queries MUST remain focused on the user's ORIGINAL QUERY above. The report plan provides structure, but the original query defines the subject. Do not drift away from the original research subject.**
+
+**IMPORTANT: Do NOT summarize any information in your response. Return all queries with complete research goals as all details are critical for the final report.**
 
 ${serpQuerySchemaPrompt}`;
 
-export const queryResultPrompt = `Please use the following query to get the latest information via the web:
+export const queryResultPrompt = `## TOOL DEFINITION: Process Search Results Tool (using model-based search)
+
+**This tool processes search results from web searches.**
+
+Please use the following query to get the latest information via the web:
 <QUERY>
 {query}
 </QUERY>
@@ -147,7 +189,9 @@ You need to think like a human researcher.
 Generate a list of learnings from the search results.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
+
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the search results. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found.**`;
 
 export const citationRulesPrompt = `Citation Rules:
 
@@ -155,7 +199,11 @@ export const citationRulesPrompt = `Citation Rules:
 - Please use the format of citation number [number] to reference the context in corresponding parts of your answer.
 - If a sentence comes from multiple contexts, please list all relevant citation numbers, e.g., [1][2]. Remember not to group citations at the end but list them in the corresponding parts of your answer.`;
 
-export const searchResultPrompt = `Given the following contexts from a SERP search for the query:
+export const searchResultPrompt = `## TOOL DEFINITION: Process Search Results Tool (using search provider)
+
+**This tool processes search results from external search providers.**
+
+Given the following contexts from a SERP search for the query:
 <QUERY>
 {query}
 </QUERY>
@@ -174,9 +222,15 @@ You need to think like a human researcher.
 Generate a list of learnings from the contexts.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
 
-export const searchKnowledgeResultPrompt = `Given the following contents from a local knowledge base search for the query:
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the search contexts. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found in the contexts.**`;
+
+export const searchKnowledgeResultPrompt = `## TOOL DEFINITION: Process Knowledge Base Results Tool
+
+**This tool processes results from local knowledge base searches.**
+
+Given the following contents from a local knowledge base search for the query:
 <QUERY>
 {query}
 </QUERY>
@@ -195,7 +249,9 @@ You need to think like a human researcher.
 Generate a list of learnings from the contents.
 Make sure each learning is unique and not similar to each other.
 The learnings should be to the point, as detailed and information dense as possible.
-Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.`;
+Make sure to include any entities like people, places, companies, products, things, etc in the learnings, as well as any specific entities, metrics, numbers, and dates when available. The learnings will be used to research the topic further.
+
+**CRITICAL: Do NOT summarize, condense, or omit ANY information from the knowledge base contents. ALL retrieved information is important and must be included in full detail in your learnings for the final report. Include all specific data, metrics, numbers, dates, names, and facts exactly as found in the contexts.**`;
 
 export const reviewPrompt = `This is the report plan after user confirmation:
 <PLAN>
@@ -219,20 +275,29 @@ If you believe no further research is needed, you can output an empty queries.
 
 ${serpQuerySchemaPrompt}`;
 
-export const finalReportCitationImagePrompt = `Image Rules:
-- Images related to the paragraph content at the appropriate location in the article according to the image description.
-- Include images using \`![Image Description](image_url)\` in a separate section.
-- **Do not add any images at the end of the article.**`;
+export const finalReportCitationImagePrompt = `When including images:
+- Place images in the narrative text at logically appropriate locations related to paragraph content
+- Use markdown format: ![Image Description](image_url)
+- Do not add a separate images section at the end`;
 
-export const finalReportReferencesPrompt = `Citation Rules:
-- Please cite research references at the end of your paragraphs when appropriate.
-- If the citation is from the reference, please **ignore**. Include only references from sources.
-- Please use the reference format [number], to reference the learnings link in corresponding parts of your answer.
-- If a paragraphs comes from multiple learnings reference link, please list all relevant citation numbers, e.g., [1][2]. Remember not to group citations at the end but list them in the corresponding parts of your answer. Control the number of footnotes.
-- Do not have more than 3 reference link in a paragraph, and keep only the most relevant ones.
-- **Do not add references at the end of the report.**`;
+export const finalReportReferencesPrompt = `When citing sources:
+- Use inline citations [number] immediately after relevant statements, not grouped at the end
+- Include no more than 3 citations per paragraph, only the most relevant ones
+- Keep citations close to the specific claims they support`;
 
-export const finalReportPrompt = `This is the report plan after user confirmation:
+export const finalReportPrompt = `## TOOL DEFINITION: Write Final Report Tool
+
+**This tool is called AFTER all search tasks are completed and learnings are gathered.**
+
+**This is the FINAL step in the research workflow.**
+
+**CRITICAL — ORIGINAL USER QUERY:**
+<ORIGINAL_QUERY>
+{query}
+</ORIGINAL_QUERY>
+The report MUST directly answer and stay focused on the original query above. All content should be relevant to this specific research request. Do NOT let the volume of tangential information in the learnings cause you to drift away from the user's original research subject.
+
+This is the report plan after user confirmation:
 <PLAN>
 {plan}
 </PLAN>
@@ -257,9 +322,35 @@ Please write according to the user's writing requirements, if any:
 {requirement}
 </REQUIREMENT>
 
-To answer the user request below, please write out a thorough structured final report based on the report plan using the learnings from research including sources, data figures, quotes. 
-Length, style and complexity should fit the user request (below). Use headers to structure the report, build tables if fitting to the retrieved information, build bullet point lists if fitting to list like content. Write out argumentation paragaphs - make sure to explain findings and reason the explain it! There is value in the citations, please use them to prove arguments and findings! The report should be fit so a consulting partner will approve this to be sent to a client without further refinement. Place the web sources and links close to statements to give correct citations.
-**Respond only the final report content, and no additional text before or after.**`;
+**YOUR PRIMARY TASK: Write the final report - NOTHING ELSE**
+
+Write a thorough structured final report based on the report plan using the learnings from research including sources, data figures, quotes.
+
+**MANDATORY OUTPUT REQUIREMENTS:**
+1. Start with exactly ONE title line using a single # symbol (e.g., "# Business Profile: John Smith")
+2. Proceed directly to report content organized by the plan sections
+3. DO NOT include any of these sections in your output:
+   - "Title", "Final Report", "Learnings", "Sources", "Summary / Next steps"
+   - "Formatting and Style Guidelines", "Guidelines", "Image Rules", "Citation Rules"
+   - "Output Structure", "Output Requirements", "Notes", "Metadata"
+   - Do not include ANY meta-sections or instructions about the report itself
+4. Do not echo user requirements or instructions from the <REQUIREMENT> field
+5. Do not include field labels like "Title:", "Report Purpose:", "Structure:", or similar
+6. Write only the substantive researched content in flowing prose with proper markdown formatting
+
+**CONTENT REQUIREMENTS:**
+- Use ALL the learnings provided above - DO NOT summarize, condense, or omit ANY information
+- All collected information is important and must be included in the final report with full detail
+- Include all specific data, metrics, numbers, dates, names, and facts from the learnings
+- Use headers to structure the report logically
+- Build tables when appropriate for numerical data
+- Build bullet point lists when appropriate for categorized content
+- Write flowing argumentation paragraphs explaining findings with reasoning
+- Include inline citations [reference number] close to relevant statements
+- Length, style and complexity should fit the user's requirements
+- When including images, place them at appropriate locations in the narrative
+
+The report should read as a polished consulting deliverable ready for client presentation without further refinement.`;
 
 export const rewritingPrompt = `You are tasked with re-writing the following text to markdown. Ensure you do not change the meaning or story behind the text. 
 
@@ -276,3 +367,120 @@ export const knowledgeGraphPrompt = `Based on the following article, please extr
 5. Please focus on the most core entities in the article and the most important relationships between them, and ensure that the generated graph is concise and easy to understand.
 6. All text content **MUST** be wrapped in \`"\` syntax. (e.g., "Any Text Content")
 7. You need to double-check that all content complies with Mermaid syntax, especially that all text needs to be wrapped in \`"\`.`;
+
+export const deepResearchPromptTemplateKeys = [
+  "systemInstruction",
+  "outputGuidelinesPrompt",
+  "systemQuestionPrompt",
+  "guidelinesPrompt",
+  "reportPlanPrompt",
+  "serpQuerySchemaPrompt",
+  "serpQueriesPrompt",
+  "queryResultPrompt",
+  "citationRulesPrompt",
+  "searchResultPrompt",
+  "searchKnowledgeResultPrompt",
+  "reviewPrompt",
+  "finalReportCitationImagePrompt",
+  "finalReportReferencesPrompt",
+  "finalReportPrompt",
+  "rewritingPrompt",
+  "knowledgeGraphPrompt",
+] as const;
+
+export type DeepResearchPromptTemplateKey =
+  (typeof deepResearchPromptTemplateKeys)[number];
+
+export type DeepResearchPromptTemplates = Record<
+  DeepResearchPromptTemplateKey,
+  string
+>;
+
+export type DeepResearchPromptOverrides = Partial<DeepResearchPromptTemplates>;
+
+export const defaultDeepResearchPromptTemplates: DeepResearchPromptTemplates = {
+  systemInstruction,
+  outputGuidelinesPrompt,
+  systemQuestionPrompt,
+  guidelinesPrompt,
+  reportPlanPrompt,
+  serpQuerySchemaPrompt,
+  serpQueriesPrompt,
+  queryResultPrompt,
+  citationRulesPrompt,
+  searchResultPrompt,
+  searchKnowledgeResultPrompt,
+  reviewPrompt,
+  finalReportCitationImagePrompt,
+  finalReportReferencesPrompt,
+  finalReportPrompt,
+  rewritingPrompt,
+  knowledgeGraphPrompt,
+};
+
+export function resolveDeepResearchPromptTemplates(
+  overrides: DeepResearchPromptOverrides = {}
+): DeepResearchPromptTemplates {
+  const templates: DeepResearchPromptTemplates = {
+    ...defaultDeepResearchPromptTemplates,
+    ...overrides,
+  };
+  if (
+    typeof overrides.guidelinesPrompt === "string" &&
+    typeof overrides.reportPlanPrompt === "undefined"
+  ) {
+    templates.reportPlanPrompt = reportPlanPrompt.replace(
+      guidelinesPrompt,
+      overrides.guidelinesPrompt
+    );
+  }
+  if (
+    typeof overrides.serpQuerySchemaPrompt === "string" &&
+    typeof overrides.serpQueriesPrompt === "undefined"
+  ) {
+    templates.serpQueriesPrompt = serpQueriesPrompt.replace(
+      serpQuerySchemaPrompt,
+      overrides.serpQuerySchemaPrompt
+    );
+  }
+  if (
+    typeof overrides.serpQuerySchemaPrompt === "string" &&
+    typeof overrides.reviewPrompt === "undefined"
+  ) {
+    templates.reviewPrompt = reviewPrompt.replace(
+      serpQuerySchemaPrompt,
+      overrides.serpQuerySchemaPrompt
+    );
+  }
+  return templates;
+}
+
+export function parseDeepResearchPromptOverrides(
+  value: unknown
+): DeepResearchPromptOverrides {
+  if (!value || value === "") {
+    return {};
+  }
+  if (typeof value === "string" && value.trim() === "") {
+    return {};
+  }
+  let raw: unknown = value;
+  if (typeof value === "string") {
+    try {
+      raw = JSON.parse(value);
+    } catch {
+      throw new Error("Prompt overrides must be a valid JSON object.");
+    }
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new Error("Prompt overrides must be a valid JSON object.");
+  }
+  const parsed: DeepResearchPromptOverrides = {};
+  for (const key of deepResearchPromptTemplateKeys) {
+    const item = (raw as Record<string, unknown>)[key];
+    if (typeof item === "string") {
+      parsed[key] = item;
+    }
+  }
+  return parsed;
+}

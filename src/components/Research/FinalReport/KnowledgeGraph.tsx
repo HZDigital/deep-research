@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useLayoutEffect, useCallback, useState } from "react";
+import { useLayoutEffect, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { streamText } from "ai";
 import { toast } from "sonner";
@@ -15,8 +15,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useModelProvider from "@/hooks/useAiProvider";
 import { useTaskStore } from "@/store/task";
-import { knowledgeGraphPrompt } from "@/constants/prompts";
+import { useSettingStore } from "@/store/setting";
+import {
+  parseDeepResearchPromptOverrides,
+  resolveDeepResearchPromptTemplates,
+} from "@/constants/prompts";
 import { parseError } from "@/utils/error";
+import { getSafeTemperatureOptions } from "@/utils/model";
 import { cn } from "@/utils/style";
 
 const MagicDownView = dynamic(() => import("@/components/MagicDown/View"));
@@ -35,20 +40,34 @@ function handleError(error: unknown) {
 function KnowledgeGraph({ open, onClose }: Props) {
   const { t } = useTranslation();
   const taskStore = useTaskStore.getState();
+  const { deepResearchPromptOverrides } = useSettingStore();
   const { createModelProvider, getModel } = useModelProvider();
   const [loading, setLoading] = useState<boolean>(false);
   const [mode, setMode] = useState<"view" | "editor">("view");
+  const promptOverrides = useMemo(() => {
+    try {
+      return parseDeepResearchPromptOverrides(deepResearchPromptOverrides);
+    } catch {
+      return {};
+    }
+  }, [deepResearchPromptOverrides]);
+  const knowledgeGraphPrompt = useMemo(() => {
+    return resolveDeepResearchPromptTemplates(promptOverrides)
+      .knowledgeGraphPrompt;
+  }, [promptOverrides]);
 
   const generateKnowledgeGraph = useCallback(async () => {
     const { finalReport, updateKnowledgeGraph } = useTaskStore.getState();
     const { thinkingModel } = getModel();
     setLoading(true);
+    const modelProvider = await createModelProvider(thinkingModel);
     const result = streamText({
-      model: await createModelProvider(thinkingModel),
+      model: modelProvider,
       system:
         knowledgeGraphPrompt +
         `\n\n**The node text uses the same language as the article**`,
       prompt: finalReport,
+      ...getSafeTemperatureOptions(thinkingModel),
       onError: handleError,
     });
     let text = "";
@@ -58,7 +77,7 @@ function KnowledgeGraph({ open, onClose }: Props) {
     updateKnowledgeGraph(text);
     text = "";
     setLoading(false);
-  }, [createModelProvider, getModel]);
+  }, [createModelProvider, getModel, knowledgeGraphPrompt]);
 
   function chnageMode() {
     if (mode === "view") {
