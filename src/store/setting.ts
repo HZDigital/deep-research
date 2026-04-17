@@ -69,6 +69,8 @@ export interface SettingStore {
   bochaApiProxy: string;
   braveApiKey: string;
   braveApiProxy: string;
+  linkupApiKey: string;
+  linkupApiProxy: string;
   searxngApiProxy: string;
   searxngScope: string;
   parallelSearch: number;
@@ -157,6 +159,8 @@ export const defaultValues: SettingStore = {
   bochaApiProxy: "",
   braveApiKey: "",
   braveApiProxy: "",
+  linkupApiKey: "",
+  linkupApiProxy: "",
   searxngApiProxy: "",
   searxngScope: "all",
   parallelSearch: 1,

@@ -4,6 +4,7 @@ import {
   EXA_BASE_URL,
   BOCHA_BASE_URL,
   BRAVE_BASE_URL,
+  LINKUP_BASE_URL,
   SEARXNG_BASE_URL,
 } from "@/constants/urls";
 import { rewritingPrompt } from "@/constants/prompts";
@@ -169,6 +170,23 @@ type BreaveImage = {
     path: string;
   };
   confidence: string;
+};
+
+type LinkupSearchResult = {
+  name?: string;
+  url?: string;
+  content?: string;
+  type?: string;
+  imageUrl?: string;
+};
+
+type LinkupImageResult = {
+  url?: string;
+  imageUrl?: string;
+  src?: string;
+  name?: string;
+  title?: string;
+  description?: string;
 };
 
 // Helper function for retrying fetch with timeout
@@ -453,6 +471,54 @@ export async function createSearchProvider({
           description: item.title,
         };
       }) as ImageSource[],
+    };
+  } else if (provider === "linkup") {
+    const response = await fetch(
+      `${completePath(baseURL || LINKUP_BASE_URL, "/v1")}/search`,
+      {
+        method: "POST",
+        headers,
+        credentials: "omit",
+        body: JSON.stringify({
+          q: query,
+          depth: "standard",
+          outputType: "searchResults",
+          includeImages: true,
+          maxResults: Number(maxResult),
+        }),
+      },
+    );
+    const { results = [], images = [] } = await response.json();
+    const normalizedResults = Array.isArray(results)
+      ? (results as LinkupSearchResult[])
+      : [];
+    const normalizedImages = Array.isArray(images)
+      ? (images as LinkupImageResult[])
+      : [];
+
+    return {
+      sources: normalizedResults
+        .filter((item) => item.url && item.type !== "image")
+        .map((result) => ({
+          content: result.content || result.name,
+          url: result.url as string,
+          title: result.name,
+        }))
+        .filter((item) => item.content) as Source[],
+      images: [
+        ...normalizedResults
+          .filter((item) => item.type === "image" && (item.imageUrl || item.url))
+          .map((item) => ({
+            url: item.imageUrl || (item.url as string),
+            description: item.name || item.content,
+          })),
+        ...normalizedImages
+          .filter((item) => item.url || item.imageUrl || item.src)
+          .map((item) => ({
+            url: item.url || item.imageUrl || (item.src as string),
+            description: item.description || item.name || item.title,
+          })),
+      ] as ImageSource[],
     };
   } else if (provider === "searxng") {
     const params = {

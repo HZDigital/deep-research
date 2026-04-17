@@ -236,7 +236,7 @@ interface SSEConfig {
   thinkingModel: string;
   // Task model id
   taskModel: string;
-  // Search provider, Possible values ​​include: model, tavily, firecrawl, exa, bocha, searxng
+  // Search provider, Possible values ​​include: model, tavily, firecrawl, exa, bocha, linkup, searxng
   searchProvider: string;
   // Response Language, also affects the search language. (optional)
   language?: string;
@@ -327,7 +327,7 @@ If your server sets `ACCESS_PASSWORD`, the MCP service will be protected and you
 # Possible values ​​include: google, openai, anthropic, deepseek, xai, mistral, azure, openrouter, openaicompatible, pollinations, ollama
 MCP_AI_PROVIDER=google
 # MCP Server search provider. Default, `model`
-# Possible values ​​include: model, tavily, firecrawl, exa, bocha, searxng
+# Possible values ​​include: model, tavily, firecrawl, exa, bocha, linkup, searxng
 MCP_SEARCH_PROVIDER=tavily
 # MCP Server thinking model id, the core model used in deep research.
 MCP_THINKING_MODEL=gemini-2.0-flash-thinking-exp

@@ -66,6 +66,7 @@ import {
   EXA_BASE_URL,
   BOCHA_BASE_URL,
   BRAVE_BASE_URL,
+  LINKUP_BASE_URL,
   SEARXNG_BASE_URL,
 } from "@/constants/urls";
 import locales from "@/constants/locales";
@@ -163,6 +164,8 @@ const formSchema = z.object({
   bochaApiProxy: z.string().optional(),
   braveApiKey: z.string().optional(),
   braveApiProxy: z.string().optional(),
+  linkupApiKey: z.string().optional(),
+  linkupApiProxy: z.string().optional(),
   searxngApiProxy: z.string().optional(),
   searxngScope: z.string().optional(),
   parallelSearch: z.number().min(1).max(5),
@@ -3051,6 +3054,9 @@ function Setting({ open, onClose }: SettingProps) {
                                 {t("setting.bocha")}
                               </SelectItem>
                             ) : null}
+                            {!isDisabledSearchProvider("linkup") ? (
+                              <SelectItem value="linkup">Linkup</SelectItem>
+                            ) : null}
                             {!isDisabledSearchProvider("searxng") ? (
                               <SelectItem value="searxng">SearXNG</SelectItem>
                             ) : null}
@@ -3415,6 +3421,52 @@ function Setting({ open, onClose }: SettingProps) {
                                 </SelectItem>
                               </SelectContent>
                             </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div
+                    className={cn("space-y-4", {
+                      hidden: searchProvider !== "linkup",
+                    })}
+                  >
+                    <FormField
+                      control={form.control}
+                      name="linkupApiKey"
+                      render={({ field }) => (
+                        <FormItem className="from-item">
+                          <FormLabel className="from-label">
+                            {t("setting.apiKeyLabel")}
+                            <span className="ml-1 text-red-500 max-sm:hidden">
+                              *
+                            </span>
+                          </FormLabel>
+                          <FormControl className="form-field">
+                            <Password
+                              type="text"
+                              placeholder={t("setting.searchApiKeyPlaceholder")}
+                              disabled={form.getValues("enableSearch") === "0"}
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="linkupApiProxy"
+                      render={({ field }) => (
+                        <FormItem className="from-item">
+                          <FormLabel className="from-label">
+                            {t("setting.apiUrlLabel")}
+                          </FormLabel>
+                          <FormControl className="form-field">
+                            <Input
+                              placeholder={LINKUP_BASE_URL}
+                              disabled={form.getValues("enableSearch") === "0"}
+                              {...field}
+                            />
                           </FormControl>
                         </FormItem>
                       )}

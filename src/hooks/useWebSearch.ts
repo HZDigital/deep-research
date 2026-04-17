@@ -66,6 +66,15 @@ function useWebSearch() {
           options.baseURL = location.origin + "/api/search/brave";
         }
         break;
+      case "linkup":
+        const { linkupApiKey, linkupApiProxy } = useSettingStore.getState();
+        if (mode === "local") {
+          options.baseURL = linkupApiProxy;
+          options.apiKey = multiApiKeyPolling(linkupApiKey);
+        } else {
+          options.baseURL = location.origin + "/api/search/linkup";
+        }
+        break;
       case "searxng":
         const { searxngApiProxy, searxngScope } = useSettingStore.getState();
         if (mode === "local") {
