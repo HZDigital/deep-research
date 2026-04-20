@@ -93,6 +93,11 @@ BRAVE_API_KEY=
 # (Optional) Server-side Brave API Proxy URL. Default, `https://api.search.brave.com/res`
 BRAVE_API_BASE_URL=
 
+# (Optional) Server-side Linkup API Key (Required for server API calls)
+LINKUP_API_KEY=
+# (Optional) Server-side Linkup API Proxy URL. Default, `https://api.linkup.so`
+LINKUP_API_BASE_URL=
+
 # (Optional) Server-side Searxng API Proxy URL. Default, `http://0.0.0.0:8080`
 SEARXNG_API_BASE_URL=
 
@@ -100,7 +105,7 @@ SEARXNG_API_BASE_URL=
 # Possible values ​​include: google, openai, anthropic, deepseek, xai, mistral, azure, openrouter, openaicompatible, pollinations, ollama
 MCP_AI_PROVIDER=
 # (Optional) MCP Server search provider. Default, `model`
-# Possible values ​​include: model, tavily, firecrawl, exa, bocha, searxng
+# Possible values ​​include: model, tavily, firecrawl, exa, bocha, linkup, searxng
 MCP_SEARCH_PROVIDER=
 # (Optional) MCP Server thinking model id, the core model used in deep research.
 MCP_THINKING_MODEL=
@@ -111,7 +116,7 @@ MCP_TASK_MODEL=
 # Possible values ​​include: google, openai, anthropic, deepseek, xai, mistral, azure, openrouter, openaicompatible, pollinations, ollama
 NEXT_PUBLIC_DISABLED_AI_PROVIDER=
 # (Optional) Disable server-side search provider usage permissions
-# Possible values ​​include: model, tavily, firecrawl, exa, bocha, searxng
+# Possible values ​​include: model, tavily, firecrawl, exa, bocha, linkup, searxng
 NEXT_PUBLIC_DISABLED_SEARCH_PROVIDER=
 # (Optional) Customize the model list, add or delete models
 NEXT_PUBLIC_MODEL_LIST=

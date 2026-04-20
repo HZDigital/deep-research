@@ -31,6 +31,8 @@ const FIRECRAWL_API_BASE_URL =
 const EXA_API_BASE_URL = process.env.EXA_API_BASE_URL || "https://api.exa.ai";
 const BOCHA_API_BASE_URL =
   process.env.BOCHA_API_BASE_URL || "https://api.bochaai.com";
+const LINKUP_API_BASE_URL =
+  process.env.LINKUP_API_BASE_URL || "https://api.linkup.so";
 const SEARXNG_API_BASE_URL =
   process.env.SEARXNG_API_BASE_URL || "http://0.0.0.0:8080";
 
@@ -50,6 +52,7 @@ const TAVILY_API_KEY = process.env.TAVILY_API_KEY || "";
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY || "";
 const EXA_API_KEY = process.env.EXA_API_KEY || "";
 const BOCHA_API_KEY = process.env.BOCHA_API_KEY || "";
+const LINKUP_API_KEY = process.env.LINKUP_API_KEY || "";
 
 export function getAIProviderBaseURL(provider: string) {
   switch (provider) {
@@ -121,6 +124,8 @@ export function getSearchProviderBaseURL(provider: string) {
       return EXA_API_BASE_URL;
     case "bocha":
       return BOCHA_API_BASE_URL;
+    case "linkup":
+      return LINKUP_API_BASE_URL;
     case "searxng":
       return SEARXNG_API_BASE_URL;
     case "model":
@@ -140,6 +145,8 @@ export function getSearchProviderApiKey(provider: string) {
       return EXA_API_KEY;
     case "bocha":
       return BOCHA_API_KEY;
+    case "linkup":
+      return LINKUP_API_KEY;
     case "searxng":
     case "model":
       return "";
