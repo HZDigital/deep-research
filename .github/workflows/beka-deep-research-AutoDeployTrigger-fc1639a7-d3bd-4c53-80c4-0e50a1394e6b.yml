@@ -1,0 +1,49 @@
+name: Trigger auto deployment for beka-deep-research
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ beka-prod ]
+    paths:
+    - '**'
+    - '.github/workflows/beka-deep-research-AutoDeployTrigger-fc1639a7-d3bd-4c53-80c4-0e50a1394e6b.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BEKADEEPRESEARCH_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.BEKADEEPRESEARCH_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.BEKADEEPRESEARCH_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: lizzycra.azurecr.io
+          registryUsername: ${{ secrets.BEKADEEPRESEARCH_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.BEKADEEPRESEARCH_REGISTRY_PASSWORD }}
+          containerAppName: beka-deep-research
+          resourceGroup: RG_lizzy
+          imageToBuild: lizzycra.azurecr.io/beka-deep-research:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
